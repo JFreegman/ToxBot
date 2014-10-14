@@ -1,0 +1,14 @@
+ToxBot Master Commands
+
+creategroup            : Creates a new groupchat
+defaultroom <n>        : Sets default groupchat room to n
+groupmessage <n> <msg> : Sends msg to groupchat n
+leave <n>              : Leaves groupchat n
+name <name>            : Sets name
+purgetime <n>          : Sets the number of days before an inactive friend is deleted
+status <s>             : Sets status (online, busy or away)
+statusmessage <msg>    : Sets status message (msg must be enclosed in quotes)
+
+NOTES: 
+- ToxBot will automatically accept a groupchat invite from a master
+- For a list of non-master commands use the command help.

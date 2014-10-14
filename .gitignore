@@ -1,0 +1,11 @@
+*~
+*.swp
+*.o
+*.d
+*.lo
+*.a
+*.out
+*.app
+*.swp
+*.orig
+toxbot
