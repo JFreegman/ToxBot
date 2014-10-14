@@ -270,7 +270,7 @@ static Tox *init_tox(void)
     tox_callback_friend_message(m, cb_friend_message, NULL);
     tox_callback_group_invite(m, cb_group_invite, NULL);
 
-    const char *statusmsg = "B..beep...bloop";
+    const char *statusmsg = "Send me the the command 'help' for more info";
     tox_set_status_message(m, (uint8_t *) statusmsg, strlen(statusmsg));
     tox_set_name(m, (uint8_t *) "ToxBot", strlen("ToxBot"));
 

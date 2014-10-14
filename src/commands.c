@@ -212,7 +212,8 @@ static void cmd_info(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_L
     tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
 
     uint32_t numfriends = tox_count_friendlist(m);
-    snprintf(outmsg, sizeof(outmsg), "Friends: %d", numfriends);
+    uint32_t numonline = tox_get_num_online_friends(m);
+    snprintf(outmsg, sizeof(outmsg), "Friends: %d (%d online)", numfriends, numonline);
     tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
 
     snprintf(outmsg, sizeof(outmsg), "Inactive friends are purged after %lu days",
