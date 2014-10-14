@@ -299,7 +299,7 @@ static void bootstrap_DHT(Tox *m)
         char *key = hex_string_to_bin(nodes[i].key);
 
         if (tox_bootstrap_from_address(m, nodes[i].ip, nodes[i].port, (uint8_t *) key) != 1)
-            fprintf(stderr, "Failed to bootstrap DHT via: %s %d %s\n", nodes[i].ip, nodes[i].port, (uint8_t *) key);
+            fprintf(stderr, "Failed to bootstrap DHT via: %s %d\n", nodes[i].ip, nodes[i].port);
 
         free(key);
     }
@@ -334,20 +334,13 @@ static void purge_inactive_friends(Tox *m)
 {
     uint64_t cur_time = (uint64_t) time(NULL);
     uint32_t numfriends = tox_count_friendlist(m);
-    uint32_t i, count = 0;
+    uint32_t i;
 
     for (i = 0; i < numfriends; ++i) {
         uint64_t last_online = tox_get_last_online(m, i);
 
-        if (cur_time - last_online > Tox_Bot.inactive_limit) {
+        if (cur_time - last_online > Tox_Bot.inactive_limit)
             tox_del_friend(m, i);
-            ++count;
-        }
-    }
-
-    if (count) {
-        printf("Purged %d contacts out of %d\n", count, numfriends);
-        save_data(m, DATA_FILE);
     }
 }
 
@@ -400,8 +393,10 @@ int main(int argc, char **argv)
     while (!FLAG_EXIT) {
         uint64_t cur_time = (uint64_t) time(NULL);
 
-        if (timed_out(last_purge, cur_time, FRIEND_PURGE_INTERVAL))
+        if (timed_out(last_purge, cur_time, FRIEND_PURGE_INTERVAL)) {
             purge_inactive_friends(m);
+            last_purge = cur_time;
+        }
 
         tox_do(m);
 

@@ -36,6 +36,7 @@
 #define MAX_NUM_ARGS 4
 #define SECONDS_IN_DAY 86400UL
 
+extern char *DATA_FILE;
 extern struct Tox_Bot Tox_Bot;
 
 static void authent_failed(Tox *m, int friendnum)
@@ -178,7 +179,7 @@ static void cmd_help(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_L
     tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
 
     if (friend_is_master(m, friendnum)) {
-        outmsg = "For a list of master commands see the master_commands.txt file";
+        outmsg = "For a list of master commands see the commands.txt file";
         tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
     }
 }
@@ -332,6 +333,7 @@ static void cmd_name(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_L
     m_name[nlen] = '\0';
 
     printf("%s set name to %s\n", m_name, name);
+    save_data(m, DATA_FILE);
 }
 
 static void cmd_purgetime(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_LENGTH])
@@ -362,9 +364,11 @@ static void cmd_purgetime(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMM
     int nlen = tox_get_name(m, friendnum, (uint8_t *) name);
     name[nlen] = '\0';
 
-    outmsg = "Purge time set";
-    tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
-    printf("Purge time set to %lu days (%lu seconds) by %s\n", days, seconds, name);
+    char msg[MAX_COMMAND_LENGTH];
+    snprintf(msg, sizeof(msg), "Purge time set to %lu days\n", days);
+    tox_send_message(m, friendnum, (uint8_t *) msg, strlen(msg));
+
+    printf("Purge time set to %lu days by %s\n", days, name);
 }
 
 static void cmd_status(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_LENGTH])
@@ -402,6 +406,7 @@ static void cmd_status(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND
     name[nlen] = '\0';
 
     printf("%s set status to %s\n", name, status);
+    save_data(m, DATA_FILE);
 }
 
 static void cmd_statusmessage(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_LENGTH])
@@ -436,6 +441,7 @@ static void cmd_statusmessage(Tox *m, int friendnum, int argc, char (*argv)[MAX_
     name[nlen] = '\0';
 
     printf("%s set status message to \"%s\"\n", name, msg);
+    save_data(m, DATA_FILE);
 }
 
 /* Parses input command and puts args into arg array.
