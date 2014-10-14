@@ -23,6 +23,6 @@
 #ifndef COMMANDS_H
 #define COMMANDS_H
 
-int execute(Tox *m, int friendnumber, const char *command, int length);
+int execute(Tox *m, int friendnumber, const char *input, int length);
 
 #endif    /* COMMANDS_H */

@@ -31,8 +31,7 @@
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #endif
 
-/* Returns 1 if connection has timed out, 0 otherwise */
-int timed_out(uint64_t timestamp, uint64_t curtime, uint64_t timeout);
+bool timed_out(uint64_t timestamp, uint64_t curtime, uint64_t timeout);
 
 /* converts hexidecimal string to binary */
 char *hex_string_to_bin(const char *hex_string);

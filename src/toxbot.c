@@ -325,10 +325,12 @@ static void purge_inactive_friends(Tox *m)
     uint32_t i;
 
     for (i = 0; i < numfriends; ++i) {
-        uint64_t last_online = tox_get_last_online(m, i);
+        if (tox_friend_exists(m, i)) {
+            uint64_t last_online = tox_get_last_online(m, i);
 
-        if (cur_time - last_online > Tox_Bot.inactive_limit)
-            tox_del_friend(m, i);
+            if (cur_time - last_online > Tox_Bot.inactive_limit)
+                tox_del_friend(m, i);
+        }
     }
 }
 
@@ -371,7 +373,7 @@ int main(int argc, char **argv)
     bootstrap_DHT(m);
 
     uint64_t looptimer = (uint64_t) time(NULL);
-    uint64_t last_purge = looptimer;
+    uint64_t last_purge = 0;
     useconds_t msleepval = 40000;
     uint64_t loopcount = 0;
 

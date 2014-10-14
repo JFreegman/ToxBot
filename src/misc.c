@@ -31,8 +31,7 @@
 
 #include "misc.h"
 
-/* Returns 1 if connection has timed out, 0 otherwise */
-int timed_out(uint64_t timestamp, uint64_t curtime, uint64_t timeout)
+bool timed_out(uint64_t timestamp, uint64_t curtime, uint64_t timeout)
 {
     return timestamp + timeout <= curtime;
 }

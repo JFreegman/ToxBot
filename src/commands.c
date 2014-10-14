@@ -49,8 +49,10 @@ static void cmd_addmaster(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMM
 {
     const char *outmsg;
 
-    if (!friend_is_master(m, friendnum))
-        return authent_failed(m, friendnum);
+    if (!friend_is_master(m, friendnum)) {
+        authent_failed(m, friendnum);
+        return;
+    }
 
     if (argc < 1) {
         outmsg = "Error: Tox ID required";
@@ -90,8 +92,10 @@ static void cmd_create_group(Tox *m, int friendnum, int argc, char (*argv)[MAX_C
 {
     const char *outmsg;
 
-    if (!friend_is_master(m, friendnum))
-        return authent_failed(m, friendnum);
+    if (!friend_is_master(m, friendnum)) {
+        authent_failed(m, friendnum);
+        return;
+    }
 
     char name[TOX_MAX_NAME_LENGTH];
     int len = tox_get_name(m, friendnum, (uint8_t *) name);
@@ -115,8 +119,10 @@ static void cmd_defaultroom(Tox *m, int friendnum, int argc, char (*argv)[MAX_CO
 {
     const char *outmsg;
 
-    if (!friend_is_master(m, friendnum))
-        return authent_failed(m, friendnum);
+    if (!friend_is_master(m, friendnum)) {
+        authent_failed(m, friendnum);
+        return;
+    }
 
     if (argc < 1) {
         outmsg = "Error: Room number required";
@@ -149,8 +155,10 @@ static void cmd_groupmsg(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMA
 {
     const char *outmsg;
 
-    if (!friend_is_master(m, friendnum))
-        return authent_failed(m, friendnum);
+    if (!friend_is_master(m, friendnum)) {
+        authent_failed(m, friendnum);
+        return;
+    }
 
     if (argc < 1) {
         outmsg = "Error: Group number required";
@@ -309,8 +317,10 @@ static void cmd_leave_group(Tox *m, int friendnum, int argc, char (*argv)[MAX_CO
 {
     const char *outmsg;
 
-    if (!friend_is_master(m, friendnum))
-        return authent_failed(m, friendnum);
+    if (!friend_is_master(m, friendnum)) {
+        authent_failed(m, friendnum);
+        return;
+    }
 
     if (argc < 1) {
         outmsg = "Error: Group number required";
@@ -347,8 +357,10 @@ static void cmd_name(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_L
 {
     const char *outmsg;
 
-    if (!friend_is_master(m, friendnum))
-        return authent_failed(m, friendnum);
+    if (!friend_is_master(m, friendnum)) {
+        authent_failed(m, friendnum);
+        return;
+    }
 
     if (argc < 1) {
         outmsg = "Error: Name required";
@@ -382,8 +394,10 @@ static void cmd_purgetime(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMM
 {
     const char *outmsg;
 
-    if (!friend_is_master(m, friendnum))
-        return authent_failed(m, friendnum);
+    if (!friend_is_master(m, friendnum)) {
+        authent_failed(m, friendnum);
+        return;
+    }
 
     if (argc < 1) {
         outmsg = "Error: number > 0 required";
@@ -417,8 +431,10 @@ static void cmd_status(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND
 {
     const char *outmsg;
 
-    if (!friend_is_master(m, friendnum))
-        return authent_failed(m, friendnum);
+    if (!friend_is_master(m, friendnum)) {
+        authent_failed(m, friendnum);
+        return;
+    }
 
     if (argc < 1) {
         outmsg = "Error: status required";
@@ -455,8 +471,10 @@ static void cmd_statusmessage(Tox *m, int friendnum, int argc, char (*argv)[MAX_
 {
     const char *outmsg;
 
-    if (!friend_is_master(m, friendnum))
-        return authent_failed(m, friendnum);
+    if (!friend_is_master(m, friendnum)) {
+        authent_failed(m, friendnum);
+        return;
+    }
 
     if (argc < 1) {
         outmsg = "Error: message required";
