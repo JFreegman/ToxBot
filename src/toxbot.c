@@ -44,15 +44,17 @@
 
 bool FLAG_EXIT = false;    /* set on SIGINT */
 char *DATA_FILE = "toxbot_save";
-const char *MASTERLIST_FILE = "masterkeys";
+char *MASTERLIST_FILE = "masterkeys";
 
 struct Tox_Bot Tox_Bot;
 
 static void init_toxbot_state(void)
 {
     Tox_Bot.start_time = (uint64_t) time(NULL);
-    Tox_Bot.inactive_limit = 2592000;    /* purge a friend after 30 days of inactivity */
     Tox_Bot.room_num = 0;
+
+    /* 1 year default; anything lower should be explicitly set until we have a config file */
+    Tox_Bot.inactive_limit = 31536000;
 }
 
 static void catch_SIGINT(int sig)
@@ -72,67 +74,52 @@ static void exit_toxbot(Tox *m)
     exit(EXIT_SUCCESS);
 }
 
-#define MAX_MASTERS 32
-static struct Masters {
-    int num;
-    char pub_keys[MAX_MASTERS][TOX_CLIENT_ID_SIZE];
-} Masters;
-
-int load_Masters(const char *path)
+/* Returns true if friendnumber's Tox ID is in the masterkeys list, false otherwise.
+   Note that it only compares the public key portion of the IDs. */
+bool friend_is_master(Tox *m, int32_t friendnumber)
 {
-    if (path == NULL)
-        return -1;
+    if (!file_exists(MASTERLIST_FILE)) {
+        FILE *fp = fopen(MASTERLIST_FILE, "w");
 
-    if (!file_exists(path)) {
-        FILE *fp = fopen(path, "w");
-
-        if (fp == NULL)
-            return -1;
+        if (fp == NULL) {
+            fprintf(stderr, "Warning: failed to create masterkeys file\n");
+            return false;
+        }
 
         fclose(fp);
+        fprintf(stderr, "Warning: creating new masterkeys file. Did you lose the old one?\n");
+        return false;
     }
 
-    FILE *fp = fopen(path, "r");
+    FILE *fp = fopen(MASTERLIST_FILE, "r");
 
-    if (fp == NULL)
-        return -1;
+    if (fp == NULL) {
+        fprintf(stderr, "Warning: failed to read masterkeys file\n");
+        return false;
+    }
 
-    char line[256];
+    char friend_key[TOX_CLIENT_ID_SIZE];
+    tox_get_client_id(m, friendnumber, (uint8_t *) friend_key);
+    char id[256];
 
-    while (fgets(line, sizeof(line), fp)) {
-        int len = strlen(line);
+    while (fgets(id, sizeof(id), fp)) {
+        int len = strlen(id);
 
         if (--len < TOX_CLIENT_ID_SIZE)
             continue;
 
-        printf("Added master %s", line);
+        char *key_bin = hex_string_to_bin(id);
 
-        char *key_bin = hex_string_to_bin(line);
-        memcpy(Masters.pub_keys[Masters.num], key_bin, TOX_CLIENT_ID_SIZE);
-        free(key_bin);
-
-        if (++Masters.num >= MAX_MASTERS) {
-            fprintf(stderr, "Warning: maximum number of Masters has been reached.\n");
-            break;
+        if (memcmp(key_bin, friend_key, TOX_CLIENT_ID_SIZE) == 0) {
+            free(key_bin);
+            fclose(fp);
+            return true;
         }
+
+        free(key_bin);
     }
 
     fclose(fp);
-    return 0;
-}
-
-bool friend_is_master(Tox *m, int32_t friendnumber)
-{
-    char friend_key[TOX_CLIENT_ID_SIZE];
-    tox_get_client_id(m, friendnumber, (uint8_t *) friend_key);
-
-    uint32_t i;
-    /* TODO: Optimize this */
-    for (i = 0; i < Masters.num; ++i) {
-        if (memcmp(Masters.pub_keys[i], friend_key, TOX_CLIENT_ID_SIZE) == 0)
-            return true;
-    }
-
     return false;
 }
 
@@ -327,6 +314,7 @@ static void print_profile_info(Tox *m)
     uint32_t numfriends = tox_count_friendlist(m);
 
     printf("Contacts: %d\n", numfriends);
+    printf("Inactive contacts purged after %lu days\n", Tox_Bot.inactive_limit / SECONDS_IN_DAY);
     printf("Name: %s\n", name);
 }
 
@@ -378,12 +366,9 @@ int main(int argc, char **argv)
     if (load_data(m, DATA_FILE) == -1)
         fprintf(stderr, "load_data failed\n");
 
-    print_profile_info(m);
     init_toxbot_state();
+    print_profile_info(m);
     bootstrap_DHT(m);
-
-    if (load_Masters(MASTERLIST_FILE) == -1)
-        fprintf(stderr, "Failed to load Masters list\n");
 
     uint64_t looptimer = (uint64_t) time(NULL);
     uint64_t last_purge = looptimer;

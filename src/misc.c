@@ -89,7 +89,6 @@ int char_find(int idx, const char *s, char ch)
     return i;
 }
 
-/* Converts seconds to string in format HH:mm:ss; truncates hours and minutes when necessary */
 void get_elapsed_time_str(char *buf, int bufsize, uint64_t secs)
 {
     if (!secs)

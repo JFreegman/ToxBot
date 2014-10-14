@@ -23,6 +23,8 @@
 #ifndef TOXBOT_H
 #define TOXBOT_H
 
+#define SECONDS_IN_DAY 86400UL
+
 struct Tox_Bot {
     uint64_t start_time;
     int room_num;

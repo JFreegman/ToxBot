@@ -34,9 +34,9 @@
 
 #define MAX_COMMAND_LENGTH TOX_MAX_MESSAGE_LENGTH
 #define MAX_NUM_ARGS 4
-#define SECONDS_IN_DAY 86400UL
 
 extern char *DATA_FILE;
+extern char *MASTERLIST_FILE;
 extern struct Tox_Bot Tox_Bot;
 
 static void authent_failed(Tox *m, int friendnum)
@@ -47,7 +47,43 @@ static void authent_failed(Tox *m, int friendnum)
 
 static void cmd_addmaster(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_LENGTH])
 {
-    /* TODO */
+    const char *outmsg;
+
+    if (!friend_is_master(m, friendnum))
+        return authent_failed(m, friendnum);
+
+    if (argc < 1) {
+        outmsg = "Error: Tox ID required";
+        tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
+        return;
+    }
+
+    const char *id = argv[1];
+
+    if (strlen(id) != TOX_FRIEND_ADDRESS_SIZE * 2) {
+        outmsg = "Error: Invalid Tox ID";
+        tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
+        return;
+    }
+
+    FILE *fp = fopen(MASTERLIST_FILE, "a");
+
+    if (fp == NULL) {
+        outmsg = "Error: could not find masterkeys file";
+        tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
+        return;
+    }
+
+    fprintf(fp, "%s\n", id);
+    fclose(fp);
+
+    char name[TOX_MAX_NAME_LENGTH];
+    int len = tox_get_name(m, friendnum, (uint8_t *) name);
+    name[len] = '\0';
+
+    printf("%s added master: %s\n", name, id);
+    outmsg = "ID added to masterkeys list";
+    tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
 }
 
 static void cmd_create_group(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_LENGTH])
@@ -255,11 +291,18 @@ static void cmd_invite(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND
         }
     }
 
+    char name[TOX_MAX_NAME_LENGTH];
+    int nlen = tox_get_name(m, friendnum, (uint8_t *) name);
+    name[nlen] = '\0';
+
     if (tox_invite_friend(m, friendnum, groupnum) == -1) {
-        fprintf(stderr, "Failed to invite friend to group %d\n", groupnum);
+        fprintf(stderr, "Failed to invite %s to group %d\n", name, groupnum);
         outmsg = "Invite failed. Please try again, or report a problem on irc: #tox @freenode";
         tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
+        return;
     }
+
+    printf("Invited %s to group %d\n", name, groupnum);
 }
 
 static void cmd_leave_group(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_LENGTH])
@@ -293,10 +336,9 @@ static void cmd_leave_group(Tox *m, int friendnum, int argc, char (*argv)[MAX_CO
     int nlen = tox_get_name(m, friendnum, (uint8_t *) name);
     name[nlen] = '\0';
 
-    char msg[MAX_COMMAND_LENGTH];
-    snprintf(msg, sizeof(msg), "%s parted from group %d", name, groupnum);
-    printf("%s\n", msg);
+    printf("Left group %d (%s)\n", groupnum, name);
 
+    char msg[MAX_COMMAND_LENGTH];
     snprintf(msg, sizeof(msg), "Left group %d", groupnum);
     tox_send_message(m, friendnum, (uint8_t *) msg, strlen(msg));
 }
@@ -523,7 +565,7 @@ static int do_command(Tox *m, int friendnum, int num_args, char (*args)[MAX_COMM
 
 int execute(Tox *m, int friendnum, const char *input, int length)
 {
-    if (length > MAX_COMMAND_LENGTH)
+    if (length >= MAX_COMMAND_LENGTH)
         return -1;
 
     char args[MAX_NUM_ARGS][MAX_COMMAND_LENGTH];
