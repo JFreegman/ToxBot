@@ -108,7 +108,7 @@ static void cmd_create_group(Tox *m, int friendnum, int argc, char (*argv)[MAX_C
         outmsg = "Group chat instance failed to initialize.";
         tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
     } else {
-        printf("Group chat %d created by %s", groupnum, name);
+        printf("Group chat %d created by %s\n", groupnum, name);
         char msg[MAX_COMMAND_LENGTH];
         snprintf(msg, sizeof(msg), "Group chat %d created", groupnum);
         tox_send_message(m, friendnum, (uint8_t *) msg, strlen(msg));
@@ -265,23 +265,37 @@ static void cmd_info(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_L
                                       Tox_Bot.inactive_limit / SECONDS_IN_DAY);
     tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
 
-    uint32_t num_active_groups = tox_count_chatlist(m);
+    /* List active group chats and number of peers in each */
+    uint32_t numchats = tox_count_chatlist(m);
 
-    if (num_active_groups) {
-        int i, count = 0;
-
-        for (i = 0; count < num_active_groups; ++i) {
-            int num_peers = tox_group_number_peers(m, i);
-
-            if (num_peers != -1) {
-                snprintf(outmsg, sizeof(outmsg), "Group %d (%d peers)", i, num_peers);
-                tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
-                ++count;
-            }
-        }
-    } else {
+    if (numchats == 0) {
         tox_send_message(m, friendnum, (uint8_t *) "No active groupchats", strlen("No active groupchats"));
+        return;
     }
+
+    int32_t *groupchat_list = malloc(numchats);
+
+    if (groupchat_list == NULL)
+        exit(EXIT_FAILURE);
+
+    if (tox_get_chatlist(m, groupchat_list, numchats) == 0) {
+        free(groupchat_list);
+        return;
+    }
+
+    uint32_t i;
+
+    for (i = 0; i < numchats; ++i) {
+        uint32_t groupnum = groupchat_list[i]; 
+        int num_peers = tox_group_number_peers(m, groupnum);
+
+        if (num_peers != -1) {
+            snprintf(outmsg, sizeof(outmsg), "Group %d (%d peers)", groupnum, num_peers);
+            tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
+        }
+    }
+
+    free(groupchat_list);
 }
 
 static void cmd_invite(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_LENGTH])

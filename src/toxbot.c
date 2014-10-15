@@ -320,18 +320,33 @@ static void print_profile_info(Tox *m)
 
 static void purge_inactive_friends(Tox *m)
 {
-    uint64_t cur_time = (uint64_t) time(NULL);
-    uint32_t numfriends = tox_count_friendlist(m);
     uint32_t i;
+    uint64_t cur_time = (uint64_t) time(NULL);
+
+    uint32_t numfriends = tox_count_friendlist(m);
+    int32_t *friend_list = malloc(numfriends);
+
+    if (friend_list == NULL)
+        exit(EXIT_FAILURE);
+
+    if (tox_get_friendlist(m, friend_list, numfriends) == 0) {
+        free(friend_list);
+        return;
+    }
 
     for (i = 0; i < numfriends; ++i) {
-        if (tox_friend_exists(m, i)) {
-            uint64_t last_online = tox_get_last_online(m, i);
+        uint32_t friendnum = friend_list[i];
 
-            if (cur_time - last_online > Tox_Bot.inactive_limit)
-                tox_del_friend(m, i);
-        }
+        if (!tox_friend_exists(m, friendnum))
+            continue;
+
+        uint64_t last_online = tox_get_last_online(m, friendnum);
+
+        if (cur_time - last_online > Tox_Bot.inactive_limit)
+            tox_del_friend(m, friendnum);
     }
+
+    free(friend_list);
 }
 
 #define REC_TOX_DO_LOOPS_PER_SEC 25
