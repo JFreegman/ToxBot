@@ -322,8 +322,11 @@ static void purge_inactive_friends(Tox *m)
 {
     uint32_t i;
     uint64_t cur_time = (uint64_t) time(NULL);
-
     uint32_t numfriends = tox_count_friendlist(m);
+
+    if (numfriends == 0)
+        return;
+
     int32_t *friend_list = malloc(numfriends);
 
     if (friend_list == NULL)

@@ -3,7 +3,6 @@ CFLAGS = -std=gnu99 -Wall -ggdb -D_XOPEN_SOURCE_EXTENDED -D_XOPEN_SOURCE -D_FILE
 OBJ = toxbot.o misc.o commands.o
 LDFLAGS = $(shell pkg-config --libs $(LIBS))
 SRC_DIR = ./src
-CC=gcc
 
 all: $(OBJ)
 	@echo "  LD    $@"
