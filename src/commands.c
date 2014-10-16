@@ -273,7 +273,7 @@ static void cmd_info(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_L
         return;
     }
 
-    int32_t *groupchat_list = malloc(numchats);
+    int32_t *groupchat_list = malloc(numchats * sizeof(int32_t));
 
     if (groupchat_list == NULL)
         exit(EXIT_FAILURE);
