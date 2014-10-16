@@ -62,12 +62,32 @@ static void catch_SIGINT(int sig)
     FLAG_EXIT = true;
 }
 
+static void exit_groupchats(Tox *m, uint32_t numchats)
+{
+    int32_t *groupchat_list = malloc(numchats * sizeof(int32_t));
+
+    if (groupchat_list == NULL)
+        return;
+
+    if (tox_get_chatlist(m, groupchat_list, numchats) == 0) {
+        free(groupchat_list);
+        return;
+    }
+
+    uint32_t i;
+
+    for (i = 0; i < numchats; ++i)
+        tox_del_groupchat(m, groupchat_list[i]);
+
+    free(groupchat_list);
+}
+
 static void exit_toxbot(Tox *m)
 {
-    int i;
+    uint32_t numchats = tox_count_chatlist(m);
 
-    for (i = 0; i < tox_count_chatlist(m); ++i)
-        tox_del_groupchat(m, i);
+    if (numchats)
+        exit_groupchats(m, numchats);
 
     save_data(m, DATA_FILE);
     tox_kill(m);
@@ -400,6 +420,7 @@ int main(int argc, char **argv)
 
         if (timed_out(last_purge, cur_time, FRIEND_PURGE_INTERVAL)) {
             purge_inactive_friends(m);
+            save_data(m, DATA_FILE);
             last_purge = cur_time;
         }
 

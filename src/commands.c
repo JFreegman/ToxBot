@@ -435,7 +435,7 @@ static void cmd_purgetime(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMM
     name[nlen] = '\0';
 
     char msg[MAX_COMMAND_LENGTH];
-    snprintf(msg, sizeof(msg), "Purge time set to %lu days\n", days);
+    snprintf(msg, sizeof(msg), "Purge time set to %lu days", days);
     tox_send_message(m, friendnum, (uint8_t *) msg, strlen(msg));
 
     printf("Purge time set to %lu days by %s\n", days, name);
