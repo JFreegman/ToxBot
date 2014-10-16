@@ -327,7 +327,7 @@ static void purge_inactive_friends(Tox *m)
     if (numfriends == 0)
         return;
 
-    int32_t *friend_list = malloc(numfriends);
+    int32_t *friend_list = malloc(numfriends * sizeof(int32_t));
 
     if (friend_list == NULL)
         exit(EXIT_FAILURE);
