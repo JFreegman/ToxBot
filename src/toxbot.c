@@ -25,6 +25,7 @@
 #include <string.h>
 #include <strings.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -32,12 +33,12 @@
 #include <limits.h>
 #include <signal.h>
 
-// #include <libircclient/libircclient.h>
 #include <tox/tox.h>
 
 #include "misc.h"
 #include "commands.h"
 #include "toxbot.h"
+#include "groupchats.h"
 
 #define VERSION "0.0.1"
 #define FRIEND_PURGE_INTERVAL 3600
@@ -51,7 +52,7 @@ struct Tox_Bot Tox_Bot;
 static void init_toxbot_state(void)
 {
     Tox_Bot.start_time = (uint64_t) time(NULL);
-    Tox_Bot.default_room_num = 0;
+    Tox_Bot.default_groupnum = 0;
     Tox_Bot.chats_idx = 0;
 
     /* 1 year default; anything lower should be explicitly set until we have a config file */
@@ -65,7 +66,8 @@ static void catch_SIGINT(int sig)
 
 static void exit_groupchats(Tox *m, uint32_t numchats)
 {
-    memset(Tox_Bot.g_chats, 0, sizeof(Tox_Bot.g_chats));   /* wipe passwords from memory */
+    memset(Tox_Bot.g_chats, 0, Tox_Bot.chats_idx * sizeof(struct Group_Chat));
+    realloc_groupchats(0);
 
     int32_t *groupchat_list = malloc(numchats * sizeof(int32_t));
 
@@ -180,24 +182,14 @@ static void cb_group_invite(Tox *m, int32_t friendnumber, const uint8_t *group_p
     int groupnum = tox_join_groupchat(m, friendnumber, group_pub_key, length);
 
     if (groupnum == -1) {
-        fprintf(stderr, "Invite from %s failed\n", name);
+        fprintf(stderr, "Invite from %s failed (core failure)\n", name);
         return;
     }
 
-    int i;
-
-    for (i = 0; i <= Tox_Bot.chats_idx; ++i) {
-        if (Tox_Bot.g_chats[i].active)
-            continue;
-
-        Tox_Bot.g_chats[i].num = groupnum;
-        Tox_Bot.g_chats[i].active = true;
-        Tox_Bot.g_chats[i].has_pass = false;
-
-        if (Tox_Bot.chats_idx == i)
-            ++Tox_Bot.chats_idx;
-
-        break;
+    if (group_add(groupnum, NULL) == -1) {
+        fprintf(stderr, "Invite from %s failed (group_add failed)\n", name);
+        tox_del_groupchat(m, groupnum);
+        return;
     }
 
     printf("Accepted groupchat invite from %s [%d]\n", name, groupnum);

@@ -1,4 +1,4 @@
-/*  toxbot.h
+/*  groupchats.c
  *
  *
  *  Copyright (C) 2014 toxbot All Rights Reserved.
@@ -20,24 +20,22 @@
  *
  */
 
-#ifndef TOXBOT_H
-#define TOXBOT_H
+#ifndef GROUPCHATS_H
+#define GROUPCHATS_H
 
-#include <stdint.h>
-#include <tox/tox.h>
-#include "groupchats.h"
+#define SECONDS_IN_DAY 86400UL
+#define MAX_PASSWORD_SIZE 64
 
-struct Tox_Bot {
-    uint64_t start_time;
-    int default_groupnum;
-    uint64_t inactive_limit;
-
-    struct Group_Chat *g_chats;
-    int chats_idx;
+struct Group_Chat {
+    int num;
+    bool active;
+    bool has_pass;
+    char password[MAX_PASSWORD_SIZE];
 };
 
-int load_Masters(const char *path);
-int save_data(Tox *m, const char *path);
-bool friend_is_master(Tox *m, int32_t friendnumber);
+int group_add(int groupnum, const char *password);
+void group_leave(int groupnum);
+int group_index(int groupnum);
+void realloc_groupchats(int n);
 
-#endif /* TOXBOT_H */
+#endif  /* GROUPCHATS_H */
