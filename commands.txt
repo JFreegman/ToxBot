@@ -1,12 +1,13 @@
 ToxBot Master Commands
 
-addmaster <id>         : Adds Tox ID to the masterkeys file
-creategroup            : Creates a new groupchat
-defaultroom <n>        : Sets default groupchat room to n
-groupmessage <n> <msg> : Sends msg to groupchat n
+default <n>            : Sets default groupchat room to n
+group <pass>           : Creates a new groupchat with optional password
+gmessage <n> <msg>     : Sends msg to groupchat n
 leave <n>              : Leaves groupchat n
+master <id>            : Adds Tox ID to the masterkeys file
 name <name>            : Sets name
-purgetime <n>          : Sets the number of days before an inactive friend is deleted
+passwd <n> <pass>      : Sets password for groupchat n (leave pass blank for no password)
+purge <n>              : Sets the number of days before an inactive friend is deleted
 status <s>             : Sets status (online, busy or away)
 statusmessage <msg>    : Sets status message
 

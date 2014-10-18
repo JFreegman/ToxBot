@@ -24,12 +24,24 @@
 #define TOXBOT_H
 
 #define SECONDS_IN_DAY 86400UL
+#define MAX_PASSWORD_SIZE 64
+#define MAX_NUM_GROUPCHATS 64
+
+struct Group_Chat {
+    int num;
+    bool active;
+    bool has_pass;
+    char password[MAX_PASSWORD_SIZE];
+};
 
 struct Tox_Bot {
     uint64_t start_time;
-    int room_num;
+    int default_room_num;
     uint64_t inactive_limit;
-} Tox_Bot;
+
+    struct Group_Chat g_chats[MAX_NUM_GROUPCHATS];
+    int chats_idx;
+};
 
 int load_Masters(const char *path);
 int save_data(Tox *m, const char *path);

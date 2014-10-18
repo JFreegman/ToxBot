@@ -51,7 +51,8 @@ struct Tox_Bot Tox_Bot;
 static void init_toxbot_state(void)
 {
     Tox_Bot.start_time = (uint64_t) time(NULL);
-    Tox_Bot.room_num = 0;
+    Tox_Bot.default_room_num = 0;
+    Tox_Bot.chats_idx = 0;
 
     /* 1 year default; anything lower should be explicitly set until we have a config file */
     Tox_Bot.inactive_limit = 31536000;
@@ -64,6 +65,8 @@ static void catch_SIGINT(int sig)
 
 static void exit_groupchats(Tox *m, uint32_t numchats)
 {
+    memset(Tox_Bot.g_chats, 0, sizeof(Tox_Bot.g_chats));   /* wipe passwords from memory */
+
     int32_t *groupchat_list = malloc(numchats * sizeof(int32_t));
 
     if (groupchat_list == NULL)
@@ -332,10 +335,9 @@ static void print_profile_info(Tox *m)
     uint16_t len = tox_get_self_name(m, (uint8_t *) name);
     name[len] = '\0';
     uint32_t numfriends = tox_count_friendlist(m);
-
+    printf("Name: %s\n", name);
     printf("Contacts: %d\n", numfriends);
     printf("Inactive contacts purged after %lu days\n", Tox_Bot.inactive_limit / SECONDS_IN_DAY);
-    printf("Name: %s\n", name);
 }
 
 static void purge_inactive_friends(Tox *m)
