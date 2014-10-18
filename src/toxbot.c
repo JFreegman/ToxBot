@@ -184,6 +184,22 @@ static void cb_group_invite(Tox *m, int32_t friendnumber, const uint8_t *group_p
         return;
     }
 
+    int i;
+
+    for (i = 0; i <= Tox_Bot.chats_idx; ++i) {
+        if (Tox_Bot.g_chats[i].active)
+            continue;
+
+        Tox_Bot.g_chats[i].num = groupnum;
+        Tox_Bot.g_chats[i].active = true;
+        Tox_Bot.g_chats[i].has_pass = false;
+
+        if (Tox_Bot.chats_idx == i)
+            ++Tox_Bot.chats_idx;
+
+        break;
+    }
+
     printf("Accepted groupchat invite from %s [%d]\n", name, groupnum);
 }
 /* END CALLBACKS */
