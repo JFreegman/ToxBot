@@ -79,7 +79,7 @@ void group_leave(int groupnum)
     int i;
 
     for (i = 0; i < Tox_Bot.chats_idx; ++i) {
-        if (Tox_Bot.g_chats[i].num == groupnum) {
+        if (Tox_Bot.g_chats[i].active && Tox_Bot.g_chats[i].num == groupnum) {
             memset(&Tox_Bot.g_chats[i], 0, sizeof(struct Group_Chat));
             break;
         }

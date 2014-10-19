@@ -1,4 +1,4 @@
-/*  groupchats.c
+/*  groupchats.h
  *
  *
  *  Copyright (C) 2014 toxbot All Rights Reserved.
