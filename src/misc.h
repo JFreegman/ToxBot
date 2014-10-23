@@ -50,7 +50,7 @@ uint16_t copy_tox_str(char *msg, size_t size, const char *data, uint16_t length)
    returns length of s if char not found */
 int char_find(int idx, const char *s, char ch);
 
-/* Converts seconds to string in format HH:mm:ss */
+/* Converts seconds to string in format days hours minutes */
 void get_elapsed_time_str(char *buf, int bufsize, uint64_t secs);
 
 #endif /* MISC_H */

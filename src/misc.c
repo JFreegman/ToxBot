@@ -93,14 +93,9 @@ void get_elapsed_time_str(char *buf, int bufsize, uint64_t secs)
     if (!secs)
         return;
 
-    long int seconds = secs % 60;
-    long int minutes = (secs % 3600) / 60;
-    long int hours = secs / 3600;
+    uint64_t minutes = (secs % 3600) / 60;
+    uint64_t hours = (secs / 3600) % 24;
+    uint64_t days = hours / 24;
 
-    if (!minutes && !hours)
-        snprintf(buf, bufsize, "00:00:%.2ld", seconds);
-    else if (!hours)
-        snprintf(buf, bufsize, "00:%.2ld:%.2ld", minutes, seconds);
-    else
-        snprintf(buf, bufsize, "%.2ld:%.2ld:%.2ld", hours, minutes, seconds);
+    snprintf(buf, bufsize, "%lud %luh %lum", days, hours, minutes);
 }
