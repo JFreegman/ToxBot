@@ -95,7 +95,7 @@ void get_elapsed_time_str(char *buf, int bufsize, uint64_t secs)
 
     uint64_t minutes = (secs % 3600) / 60;
     uint64_t hours = (secs / 3600) % 24;
-    uint64_t days = hours / 24;
+    uint64_t days = (secs / 3600) / 24;
 
     snprintf(buf, bufsize, "%lud %luh %lum", days, hours, minutes);
 }
