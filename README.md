@@ -16,7 +16,10 @@ Note: ToxBot will automatically accept a groupchat invite from a master.
 * `invite <n> <pass>` - Request invite to group chat n (with password if necessary)
 
 ## Dependencies
+pkg-config
 [libtoxcore](https://github.com/irungentoo/toxcore)
 
 ## Compiling
 Run `make`
+
+Note: If you get an error that says `cannot open shared object file: No such file or directory`, try running `sudo ldconfig`.
