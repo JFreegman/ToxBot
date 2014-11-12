@@ -90,9 +90,6 @@ int char_find(int idx, const char *s, char ch)
 
 void get_elapsed_time_str(char *buf, int bufsize, uint64_t secs)
 {
-    if (!secs)
-        return;
-
     uint64_t minutes = (secs % 3600) / 60;
     uint64_t hours = (secs / 3600) % 24;
     uint64_t days = (secs / 3600) / 24;

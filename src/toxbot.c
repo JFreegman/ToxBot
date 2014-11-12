@@ -34,6 +34,7 @@
 #include <signal.h>
 
 #include <tox/tox.h>
+#include <tox/toxav.h>
 
 #include "misc.h"
 #include "commands.h"
@@ -169,7 +170,7 @@ static void cb_friend_message(Tox *m, int32_t friendnumber, const uint8_t *strin
     }
 }
 
-static void cb_group_invite(Tox *m, int32_t friendnumber, const uint8_t *group_pub_key, uint16_t length, 
+static void cb_group_invite(Tox *m, int32_t friendnumber, uint8_t type, const uint8_t *group_pub_key, uint16_t length, 
                             void *userdata)
 {
     if (!friend_is_master(m, friendnumber))
@@ -179,7 +180,12 @@ static void cb_group_invite(Tox *m, int32_t friendnumber, const uint8_t *group_p
     int len = tox_get_name(m, friendnumber, (uint8_t *) name);
     name[len] = '\0';
 
-    int groupnum = tox_join_groupchat(m, friendnumber, group_pub_key, length);
+    int groupnum = -1;
+
+    if (type == TOX_GROUPCHAT_TYPE_TEXT)
+        groupnum = tox_join_groupchat(m, friendnumber, group_pub_key, length);
+    else if (type == TOX_GROUPCHAT_TYPE_AV)
+        groupnum = toxav_join_av_groupchat(m, friendnumber, group_pub_key, length, NULL, NULL);
 
     if (groupnum == -1) {
         fprintf(stderr, "Invite from %s failed (core failure)\n", name);

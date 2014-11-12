@@ -29,6 +29,7 @@
 #include <time.h>
 
 #include <tox/tox.h>
+#include <tox/toxav.h>
 
 #include "toxbot.h"
 #include "misc.h"
@@ -153,11 +154,24 @@ static void cmd_group(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_
         return;
     }
 
+    if (argc < 1) {
+        outmsg = "Please specify the group type: audio or text";
+        tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
+        return;
+    }
+
+    uint8_t type = TOX_GROUPCHAT_TYPE_AV ? strcasecmp(argv[1], "audio") : TOX_GROUPCHAT_TYPE_TEXT;
+
     char name[TOX_MAX_NAME_LENGTH];
     int len = tox_get_name(m, friendnum, (uint8_t *) name);
     name[len] = '\0';
 
-    int groupnum = tox_add_groupchat(m);
+    int groupnum = -1;
+
+    if (type == TOX_GROUPCHAT_TYPE_TEXT)
+        groupnum = tox_add_groupchat(m);
+    else if (type == TOX_GROUPCHAT_TYPE_AV)
+        groupnum = toxav_add_av_groupchat(m, NULL, NULL);
     
     if (groupnum == -1) {
         printf("Group chat creation by %s failed to initialize", name);
@@ -166,9 +180,9 @@ static void cmd_group(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_
         return;
     }
 
-    const char *password = argc >= 1 ? argv[1] : NULL;
+    const char *password = argc >= 2 ? argv[2] : NULL;
 
-    if (password && strlen(argv[1]) >= MAX_PASSWORD_SIZE) {
+    if (password && strlen(argv[2]) >= MAX_PASSWORD_SIZE) {
         printf("Group chat creation by %s failed: Password too long", name);
         outmsg = "Group chat instance failed to initialize: Password too long";
         tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));

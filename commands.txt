@@ -1,7 +1,7 @@
 ToxBot Master Commands
 
 default <n>            : Sets default groupchat room to n
-group <pass>           : Creates a new groupchat with optional password
+group <type> <pass>    : Creates a new groupchat with type: text | audio (optional password)
 gmessage <n> <msg>     : Sends msg to groupchat n
 leave <n>              : Leaves groupchat n
 master <id>            : Adds Tox ID to the masterkeys file
