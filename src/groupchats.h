@@ -30,10 +30,11 @@ struct Group_Chat {
     int num;
     bool active;
     bool has_pass;
+    uint8_t type;
     char password[MAX_PASSWORD_SIZE];
 };
 
-int group_add(int groupnum, const char *password);
+int group_add(int groupnum, uint8_t type, const char *password);
 void group_leave(int groupnum);
 int group_index(int groupnum);
 void realloc_groupchats(int n);

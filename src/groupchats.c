@@ -46,7 +46,7 @@ void realloc_groupchats(int n)
     Tox_Bot.g_chats = g;
 }
 
-int group_add(int groupnum, const char *password)
+int group_add(int groupnum, uint8_t type, const char *password)
 {
     realloc_groupchats(Tox_Bot.chats_idx + 1);
     memset(&Tox_Bot.g_chats[Tox_Bot.chats_idx], 0, sizeof(struct Group_Chat));
@@ -59,6 +59,7 @@ int group_add(int groupnum, const char *password)
 
         Tox_Bot.g_chats[i].num = groupnum;
         Tox_Bot.g_chats[i].active = true;
+        Tox_Bot.g_chats[i].type = type;
 
         if (password) {
             Tox_Bot.g_chats[i].has_pass = true;

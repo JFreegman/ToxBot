@@ -160,7 +160,7 @@ static void cmd_group(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_
         return;
     }
 
-    uint8_t type = TOX_GROUPCHAT_TYPE_AV ? strcasecmp(argv[1], "audio") : TOX_GROUPCHAT_TYPE_TEXT;
+    uint8_t type = TOX_GROUPCHAT_TYPE_AV ? !strcasecmp(argv[1], "audio") : TOX_GROUPCHAT_TYPE_TEXT;
 
     char name[TOX_MAX_NAME_LENGTH];
     int len = tox_get_name(m, friendnum, (uint8_t *) name);
@@ -174,7 +174,7 @@ static void cmd_group(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_
         groupnum = toxav_add_av_groupchat(m, NULL, NULL);
     
     if (groupnum == -1) {
-        printf("Group chat creation by %s failed to initialize", name);
+        printf("Group chat creation by %s failed to initialize\n", name);
         outmsg = "Group chat instance failed to initialize.";
         tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
         return;
@@ -183,13 +183,13 @@ static void cmd_group(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_
     const char *password = argc >= 2 ? argv[2] : NULL;
 
     if (password && strlen(argv[2]) >= MAX_PASSWORD_SIZE) {
-        printf("Group chat creation by %s failed: Password too long", name);
+        printf("Group chat creation by %s failed: Password too long\n", name);
         outmsg = "Group chat instance failed to initialize: Password too long";
         tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
         return;
     }
 
-    if (group_add(groupnum, password) == -1) {
+    if (group_add(groupnum, type, password) == -1) {
         printf("Group chat creation by %s failed", name);
         outmsg = "Group chat creation failed";
         tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
@@ -289,7 +289,8 @@ static void cmd_info(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_L
         int num_peers = tox_group_number_peers(m, groupnum);
 
         if (num_peers != -1) {
-            snprintf(outmsg, sizeof(outmsg), "Group %d (%d peers)", groupnum, num_peers);
+            const char *s = tox_group_get_type(m, groupnum) == TOX_GROUPCHAT_TYPE_TEXT ? "Text" : "Audio";
+            snprintf(outmsg, sizeof(outmsg), "%s Group %d (%d peers)", s, groupnum, num_peers);
             tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
         }
     }
