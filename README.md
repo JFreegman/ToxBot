@@ -18,6 +18,7 @@ Note: ToxBot will automatically accept a groupchat invite from a master.
 ## Dependencies
 pkg-config
 [libtoxcore](https://github.com/irungentoo/toxcore)
+libtoxav
 
 ## Compiling
 Run `make`
