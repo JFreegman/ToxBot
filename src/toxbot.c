@@ -192,7 +192,7 @@ static void cb_group_invite(Tox *m, int32_t friendnumber, uint8_t type, const ui
         return;
     }
 
-    if (group_add(groupnum, NULL) == -1) {
+    if (group_add(groupnum, type, NULL) == -1) {
         fprintf(stderr, "Invite from %s failed (group_add failed)\n", name);
         tox_del_groupchat(m, groupnum);
         return;
