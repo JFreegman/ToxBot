@@ -289,8 +289,11 @@ static void cmd_info(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_L
         int num_peers = tox_group_number_peers(m, groupnum);
 
         if (num_peers != -1) {
-            const char *s = tox_group_get_type(m, groupnum) == TOX_GROUPCHAT_TYPE_TEXT ? "Text" : "Audio";
-            snprintf(outmsg, sizeof(outmsg), "%s Group %d (%d peers)", s, groupnum, num_peers);
+            const char *title = Tox_Bot.g_chats[groupnum].title_len
+                              ? Tox_Bot.g_chats[groupnum].title : "None";
+            const char *type = tox_group_get_type(m, groupnum) == TOX_GROUPCHAT_TYPE_TEXT ? "Text" : "Audio";
+            snprintf(outmsg, sizeof(outmsg), "Group %d | %s | peers: %d | Title: %s", groupnum, type,
+                                                                                      num_peers, title);
             tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
         }
     }
@@ -488,12 +491,6 @@ static void cmd_passwd(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND
         return;
     }
 
-    if (tox_group_number_peers(m, groupnum) == -1) {
-        outmsg = "Error: Invalid group number";
-        tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
-        return;
-    }
-
     int idx = group_index(groupnum);
 
     if (idx == -1) {
@@ -646,6 +643,61 @@ static void cmd_statusmessage(Tox *m, int friendnum, int argc, char (*argv)[MAX_
     save_data(m, DATA_FILE);
 }
 
+static void cmd_title_set(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_LENGTH])
+{
+    const char *outmsg;
+
+    if (!friend_is_master(m, friendnum)) {
+        authent_failed(m, friendnum);
+        return;
+    }
+
+    if (argc < 2) {
+        outmsg = "Error: Two arguments are required";
+        tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
+        return;
+    }
+
+    if (argv[2][0] != '\"') {
+        outmsg = "Error: title must be enclosed in quotes";
+        tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
+        return;
+    }
+
+    int groupnum = atoi(argv[1]);
+
+    if (groupnum == 0 && strcmp(argv[1], "0")) {
+        outmsg = "Error: Invalid group number";
+        tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
+        return;
+    }
+
+    /* remove opening and closing quotes */
+    char title[MAX_COMMAND_LENGTH];
+    snprintf(title, sizeof(title), "%s", &argv[2][1]);
+    int len = strlen(title) - 1;
+    title[len] = '\0';
+
+    char name[TOX_MAX_NAME_LENGTH];
+    int nlen = tox_get_name(m, friendnum, (uint8_t *) name);
+    name[nlen] = '\0';
+
+    if (tox_group_set_title(m, groupnum, (uint8_t *) title, len) != 0) {
+        outmsg = "Failed to set title. This may be caused by an invalid group number or an empty room";
+        tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
+        printf("%s failed to set the title '%s' for group %d\n", name, title, groupnum);
+        return;
+    }
+
+    int idx = group_index(groupnum);
+    memcpy(Tox_Bot.g_chats[idx].title, title, len);
+    Tox_Bot.g_chats[idx].title_len = len;
+
+    outmsg = "Group title set";
+    tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
+    printf("%s set group %d title to %s\n", name, groupnum, title);
+}
+
 /* Parses input command and puts args into arg array.
    Returns number of arguments on success, -1 on failure. */
 static int parse_command(const char *input, char (*args)[MAX_COMMAND_LENGTH])
@@ -707,6 +759,7 @@ static struct {
     { "purge",            cmd_purge         },
     { "status",           cmd_status        },
     { "statusmessage",    cmd_statusmessage },
+    { "title",            cmd_title_set     },
     { NULL,               NULL              },
 };
 

@@ -200,6 +200,22 @@ static void cb_group_invite(Tox *m, int32_t friendnumber, uint8_t type, const ui
 
     printf("Accepted groupchat invite from %s [%d]\n", name, groupnum);
 }
+
+static void cb_group_titlechange(Tox *m, int groupnumber, int peernumber, const uint8_t *title, uint8_t length,
+                                 void *userdata)
+{
+    char message[TOX_MAX_MESSAGE_LENGTH];
+    length = copy_tox_str(message, sizeof(message), (const char *) title, length);
+
+    int idx = group_index(groupnumber);
+
+    if (idx == -1)
+        return;
+
+    memcpy(Tox_Bot.g_chats[idx].title, message, length);
+    Tox_Bot.g_chats[idx].title_len = length;
+}
+
 /* END CALLBACKS */
 
 int save_data(Tox *m, const char *path)
@@ -293,6 +309,7 @@ static Tox *init_tox(void)
     tox_callback_friend_request(m, cb_friend_request, NULL);
     tox_callback_friend_message(m, cb_friend_message, NULL);
     tox_callback_group_invite(m, cb_group_invite, NULL);
+    tox_callback_group_title(m, cb_group_titlechange, NULL);
 
     const char *statusmsg = "Send me the the command 'help' for more info";
     tox_set_status_message(m, (uint8_t *) statusmsg, strlen(statusmsg));

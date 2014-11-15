@@ -31,6 +31,9 @@ struct Group_Chat {
     bool active;
     bool has_pass;
     uint8_t type;
+    char title[TOX_MAX_NAME_LENGTH];
+    int title_len;
+    bool title_lock;
     char password[MAX_PASSWORD_SIZE];
 };
 

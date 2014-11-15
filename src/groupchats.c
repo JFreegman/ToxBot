@@ -57,6 +57,7 @@ int group_add(int groupnum, uint8_t type, const char *password)
         if (Tox_Bot.g_chats[i].active)
             continue;
 
+        memset(&Tox_Bot.g_chats[i], 0, sizeof(struct Group_Chat));
         Tox_Bot.g_chats[i].num = groupnum;
         Tox_Bot.g_chats[i].active = true;
         Tox_Bot.g_chats[i].type = type;

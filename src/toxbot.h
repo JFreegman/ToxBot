@@ -29,8 +29,9 @@
 
 struct Tox_Bot {
     uint64_t start_time;
-    int default_groupnum;
     uint64_t inactive_limit;
+    int default_groupnum;
+    bool title_lock;
 
     struct Group_Chat *g_chats;
     int chats_idx;

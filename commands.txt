@@ -10,6 +10,7 @@ passwd <n> <pass>      : Sets password for groupchat n (leave pass blank for no 
 purge <n>              : Sets the number of days before an inactive friend is deleted
 status <s>             : Sets status (online, busy or away)
 statusmessage <msg>    : Sets status message
+title <n> <msg>        : Sets title for groupchat n
 
 NOTES: 
 - ToxBot will automatically accept a groupchat invite from a master
