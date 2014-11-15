@@ -163,6 +163,7 @@ static void cb_friend_message(Tox *m, int32_t friendnumber, const uint8_t *strin
     const char *outmsg;
     char message[TOX_MAX_MESSAGE_LENGTH];
     length = copy_tox_str(message, sizeof(message), (const char *) string, length);
+    message[length] = '\0';
 
     if (length && execute(m, friendnumber, message, length) == -1) {
         outmsg = "Invalid command. Type help for a list of commands";
@@ -212,7 +213,7 @@ static void cb_group_titlechange(Tox *m, int groupnumber, int peernumber, const 
     if (idx == -1)
         return;
 
-    memcpy(Tox_Bot.g_chats[idx].title, message, length);
+    memcpy(Tox_Bot.g_chats[idx].title, message, length + 1);
     Tox_Bot.g_chats[idx].title_len = length;
 }
 
