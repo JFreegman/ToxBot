@@ -691,7 +691,7 @@ static void cmd_title_set(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMM
     }
 
     int idx = group_index(groupnum);
-    memcpy(Tox_Bot.g_chats[idx].title, title, len);
+    memcpy(Tox_Bot.g_chats[idx].title, title, len + 1);
     Tox_Bot.g_chats[idx].title_len = len;
 
     outmsg = "Group title set";
