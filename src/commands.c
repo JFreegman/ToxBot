@@ -289,8 +289,9 @@ static void cmd_info(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_L
         int num_peers = tox_group_number_peers(m, groupnum);
 
         if (num_peers != -1) {
-            const char *title = Tox_Bot.g_chats[groupnum].title_len
-                              ? Tox_Bot.g_chats[groupnum].title : "None";
+            int idx = group_index(groupnum);
+            const char *title = Tox_Bot.g_chats[idx].title_len
+                              ? Tox_Bot.g_chats[idx].title : "None";
             const char *type = tox_group_get_type(m, groupnum) == TOX_GROUPCHAT_TYPE_TEXT ? "Text" : "Audio";
             snprintf(outmsg, sizeof(outmsg), "Group %d | %s | peers: %d | Title: %s", groupnum, type,
                                                                                       num_peers, title);
