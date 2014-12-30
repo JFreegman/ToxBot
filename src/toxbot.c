@@ -171,7 +171,7 @@ static void cb_friend_message(Tox *m, int32_t friendnumber, const uint8_t *strin
     }
 }
 
-static void cb_group_invite(Tox *m, int32_t friendnumber, uint8_t type, const uint8_t *group_pub_key, uint16_t length, 
+static void cb_group_invite(Tox *m, int32_t friendnumber, uint8_t type, const uint8_t *group_pub_key, uint16_t length,
                             void *userdata)
 {
     if (!friend_is_master(m, friendnumber))
@@ -263,7 +263,7 @@ static int load_data(Tox *m, char *path)
             return -1;
 
         return 0;
-    } 
+    }
 
     off_t len = file_size(path);
 
@@ -298,9 +298,9 @@ static int load_data(Tox *m, char *path)
 static Tox *init_tox(void)
 {
     Tox_Options tox_opts;
+    memset(tox_opts, 0, sizeof(Tox_Options));
+
     tox_opts.ipv6enabled = 1;
-    tox_opts.udp_disabled = 0;
-    tox_opts.proxy_enabled = 0;
 
     Tox *m = tox_new(&tox_opts);
 
