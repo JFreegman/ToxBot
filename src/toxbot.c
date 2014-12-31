@@ -298,7 +298,7 @@ static int load_data(Tox *m, char *path)
 static Tox *init_tox(void)
 {
     Tox_Options tox_opts;
-    memset(tox_opts, 0, sizeof(Tox_Options));
+    memset(&tox_opts, 0, sizeof(Tox_Options));
 
     tox_opts.ipv6enabled = 1;
 
