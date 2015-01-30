@@ -369,7 +369,7 @@ static void print_profile_info(Tox *m)
     uint32_t numfriends = tox_count_friendlist(m);
     printf("Name: %s\n", name);
     printf("Contacts: %d\n", numfriends);
-    printf("Inactive contacts purged after %lu days\n", Tox_Bot.inactive_limit / SECONDS_IN_DAY);
+    printf("Inactive contacts purged after %"PRIu64" days\n", Tox_Bot.inactive_limit / SECONDS_IN_DAY);
 }
 
 static void purge_inactive_friends(Tox *m)

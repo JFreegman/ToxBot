@@ -90,9 +90,9 @@ int char_find(int idx, const char *s, char ch)
 
 void get_elapsed_time_str(char *buf, int bufsize, uint64_t secs)
 {
-    uint64_t minutes = (secs % 3600) / 60;
-    uint64_t hours = (secs / 3600) % 24;
-    uint64_t days = (secs / 3600) / 24;
+    long unsigned int minutes = (secs % 3600) / 60;
+    long unsigned int hours = (secs / 3600) % 24;
+    long unsigned int days = (secs / 3600) / 24;
 
     snprintf(buf, bufsize, "%lud %luh %lum", days, hours, minutes);
 }

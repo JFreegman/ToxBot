@@ -134,7 +134,7 @@ static void cmd_gmessage(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMA
     if (tox_group_message_send(m, groupnum, (uint8_t *) msg, strlen(msg)) == -1) {
         outmsg = "Error: Failed to send message.";
         tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
-        return; 
+        return;
     }
 
     char name[TOX_MAX_NAME_LENGTH];
@@ -172,7 +172,7 @@ static void cmd_group(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_
         groupnum = tox_add_groupchat(m);
     else if (type == TOX_GROUPCHAT_TYPE_AV)
         groupnum = toxav_add_av_groupchat(m, NULL, NULL);
-    
+
     if (groupnum == -1) {
         printf("Group chat creation by %s failed to initialize\n", name);
         outmsg = "Group chat instance failed to initialize.";
@@ -190,11 +190,11 @@ static void cmd_group(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_
     }
 
     if (group_add(groupnum, type, password) == -1) {
-        printf("Group chat creation by %s failed", name);
+        printf("Group chat creation by %s failed\n", name);
         outmsg = "Group chat creation failed";
         tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
         tox_del_groupchat(m, groupnum);
-        return;  
+        return;
     }
 
     const char *pw = password ? " (Password protected)" : "";
@@ -229,20 +229,19 @@ static void cmd_help(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_L
 
 static void cmd_id(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_LENGTH])
 {
-    char myid[TOX_CLIENT_ID_SIZE * 2 + 1] = {0};
+    char outmsg[TOX_FRIEND_ADDRESS_SIZE * 2 + 1];
     char address[TOX_FRIEND_ADDRESS_SIZE];
     tox_get_address(m, (uint8_t *) address);
     int i;
 
     for (i = 0; i < TOX_FRIEND_ADDRESS_SIZE; ++i) {
         char d[3];
-        snprintf(d, sizeof(d), "%02X", address[i] & 0xff);
-        strcat(myid, d);
+        sprintf(d, "%02X", address[i] & 0xff);
+        memcpy(outmsg + i * 2, d, 2);
     }
 
-    char outmsg[MAX_COMMAND_LENGTH];
-    snprintf(outmsg, sizeof(outmsg), "%s", myid);
-    tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
+    outmsg[TOX_FRIEND_ADDRESS_SIZE * 2] = '\0';
+    tox_send_message(m, friendnum, (uint8_t *) outmsg, TOX_FRIEND_ADDRESS_SIZE * 2);
 }
 
 static void cmd_info(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_LENGTH])
@@ -260,7 +259,7 @@ static void cmd_info(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_L
     snprintf(outmsg, sizeof(outmsg), "Friends: %d (%d online)", numfriends, numonline);
     tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
 
-    snprintf(outmsg, sizeof(outmsg), "Inactive friends are purged after %lu days",
+    snprintf(outmsg, sizeof(outmsg), "Inactive friends are purged after %"PRIu64" days",
                                       Tox_Bot.inactive_limit / SECONDS_IN_DAY);
     tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
 
@@ -285,7 +284,7 @@ static void cmd_info(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_L
     uint32_t i;
 
     for (i = 0; i < numchats; ++i) {
-        uint32_t groupnum = groupchat_list[i]; 
+        uint32_t groupnum = groupchat_list[i];
         int num_peers = tox_group_number_peers(m, groupnum);
 
         if (num_peers != -1) {
@@ -561,10 +560,10 @@ static void cmd_purge(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_
     name[nlen] = '\0';
 
     char msg[MAX_COMMAND_LENGTH];
-    snprintf(msg, sizeof(msg), "Purge time set to %lu days", days);
+    snprintf(msg, sizeof(msg), "Purge time set to %"PRIu64" days", days);
     tox_send_message(m, friendnum, (uint8_t *) msg, strlen(msg));
 
-    printf("Purge time set to %lu days by %s\n", days, name);
+    printf("Purge time set to %"PRIu64" days by %s\n", days, name);
 }
 
 static void cmd_status(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_LENGTH])
