@@ -124,19 +124,19 @@ bool friend_is_master(Tox *m, int32_t friendnumber)
         return false;
     }
 
-    char friend_key[TOX_CLIENT_ID_SIZE];
+    char friend_key[TOX_PUBLIC_KEY_SIZE];
     tox_get_client_id(m, friendnumber, (uint8_t *) friend_key);
     char id[256];
 
     while (fgets(id, sizeof(id), fp)) {
         int len = strlen(id);
 
-        if (--len < TOX_CLIENT_ID_SIZE)
+        if (--len < TOX_PUBLIC_KEY_SIZE)
             continue;
 
         char *key_bin = hex_string_to_bin(id);
 
-        if (memcmp(key_bin, friend_key, TOX_CLIENT_ID_SIZE) == 0) {
+        if (memcmp(key_bin, friend_key, TOX_PUBLIC_KEY_SIZE) == 0) {
             free(key_bin);
             fclose(fp);
             return true;
