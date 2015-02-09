@@ -14,6 +14,7 @@ Note: ToxBot will automatically accept a groupchat invite from a master.
 * `id` - Print Tox ID
 * `invite` - Request invite to default group chat
 * `invite <n> <pass>` - Request invite to group chat n (with password if necessary)
+* `group <type> <pass>` - Creates a new groupchat with type: text | audio (optional password)
 
 ## Dependencies
 pkg-config

@@ -149,11 +149,6 @@ static void cmd_group(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_
 {
     const char *outmsg;
 
-    if (!friend_is_master(m, friendnum)) {
-        authent_failed(m, friendnum);
-        return;
-    }
-
     if (argc < 1) {
         outmsg = "Please specify the group type: audio or text";
         tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
@@ -219,6 +214,9 @@ static void cmd_help(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND_L
     tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
 
     outmsg = "invite <n> <p> : Request invite to group chat n (with password p if protected)";
+    tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
+
+    outmsg = "group <type> <pass> : Creates a new groupchat with type: text | audio (optional password)";
     tox_send_message(m, friendnum, (uint8_t *) outmsg, strlen(outmsg));
 
     if (friend_is_master(m, friendnum)) {

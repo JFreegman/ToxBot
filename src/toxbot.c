@@ -43,6 +43,7 @@
 
 #define VERSION "0.0.1"
 #define FRIEND_PURGE_INTERVAL 3600
+#define GROUP_PURGE_INTERVAL 60
 
 bool FLAG_EXIT = false;    /* set on SIGINT */
 char *DATA_FILE = "toxbot_save";
@@ -406,6 +407,24 @@ static void purge_inactive_friends(Tox *m)
     free(friend_list);
 }
 
+static void purge_empty_groups(Tox *m)
+{
+    uint32_t i;
+
+    for (i = 0; i < Tox_Bot.chats_idx; ++i) {
+        if (!Tox_Bot.g_chats[i].active)
+            continue;
+
+        int num_peers = tox_group_number_peers(m, Tox_Bot.g_chats[i].num);
+
+        if (num_peers <= 1) {
+            fprintf(stderr, "Deleting empty group %i\n", Tox_Bot.g_chats[i].num);
+            tox_del_groupchat(m, i);
+            group_leave(i);
+        }
+    }
+}
+
 #define REC_TOX_DO_LOOPS_PER_SEC 25
 
 /* Adjusts usleep value so that tox_do runs close to the recommended number of times per second */
@@ -445,17 +464,22 @@ int main(int argc, char **argv)
     bootstrap_DHT(m);
 
     uint64_t looptimer = (uint64_t) time(NULL);
-    uint64_t last_purge = 0;
+    uint64_t last_friend_purge, last_group_purge = 0;
     useconds_t msleepval = 40000;
     uint64_t loopcount = 0;
 
     while (!FLAG_EXIT) {
         uint64_t cur_time = (uint64_t) time(NULL);
 
-        if (timed_out(last_purge, cur_time, FRIEND_PURGE_INTERVAL)) {
+        if (timed_out(last_friend_purge, cur_time, FRIEND_PURGE_INTERVAL)) {
             purge_inactive_friends(m);
             save_data(m, DATA_FILE);
-            last_purge = cur_time;
+            last_friend_purge = cur_time;
+        }
+
+        if (timed_out(last_group_purge, cur_time, GROUP_PURGE_INTERVAL)) {
+            purge_empty_groups(m);
+            last_group_purge = cur_time;
         }
 
         tox_do(m);
