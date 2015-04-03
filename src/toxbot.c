@@ -430,39 +430,37 @@ static void print_profile_info(Tox *m)
     size_t numfriends = tox_self_get_friend_list_size(m);
     printf("Name: %s\n", name);
     printf("Contacts: %d\n", (int) numfriends);
-    // printf("Inactive contacts purged after %"PRIu64" days\n", Tox_Bot.inactive_limit / SECONDS_IN_DAY);
+    printf("Inactive contacts purged after %"PRIu64" days\n", Tox_Bot.inactive_limit / SECONDS_IN_DAY);
 }
 
-/* This function no longer works because the last_online API function was
- * removed for no good reason. */
+static void purge_inactive_friends(Tox *m)
+{
+    size_t numfriends = tox_self_get_friend_list_size(m);
 
-// static void purge_inactive_friends(Tox *m)
-// {
-    // uint64_t cur_time =
-    // size_t numfriends = tox_self_get_friend_list_size(m);
+    if (numfriends == 0)
+        return;
 
-    // if (numfriends == 0)
-    //     return;
+    uint32_t friend_list[numfriends];
+    tox_self_get_friend_list(m, friend_list);
 
-    // uint32_t friend_list[numfriends];
+    size_t i;
 
-    // if (tox_get_friendlist(m, friend_list, numfriends) == 0)
-    //     return;
+    for (i = 0; i < numfriends; ++i) {
+        uint32_t friendnum = friend_list[i];
 
-    // size_t i;
+        if (!tox_friend_exists(m, friendnum))
+            continue;
 
-    // for (i = 0; i < numfriends; ++i) {
-    //     uint32_t friendnum = friend_list[i];
+        TOX_ERR_FRIEND_GET_LAST_ONLINE err;
+        uint64_t last_online = tox_friend_get_last_online(m, friendnum, &err);
 
-    //     if (!tox_friend_exists(m, friendnum))
-    //         continue;
+        if (err != TOX_ERR_FRIEND_GET_LAST_ONLINE_OK)
+            continue;
 
-    //     uint64_t last_online = tox_get_last_online(m, friendnum);
-
-    //     if (((uint64_t) time(NULL)) - last_online > Tox_Bot.inactive_limit)
-    //         tox_del_friend(m, friendnum);
-    // }
-// }
+        if (((uint64_t) time(NULL)) - last_online > Tox_Bot.inactive_limit)
+            tox_friend_delete(m, friendnum, NULL);
+    }
+}
 
 static void purge_empty_groups(Tox *m)
 {
@@ -516,7 +514,7 @@ int main(int argc, char **argv)
     bootstrap_DHT(m);
 
     uint64_t looptimer = (uint64_t) time(NULL);
-    // uint64_t last_friend_purge = 0;
+    uint64_t last_friend_purge = 0;
     uint64_t last_group_purge = 0;
     useconds_t msleepval = 40000;
     uint64_t loopcount = 0;
@@ -524,11 +522,11 @@ int main(int argc, char **argv)
     while (!FLAG_EXIT) {
         uint64_t cur_time = (uint64_t) time(NULL);
 
-        // if (timed_out(last_friend_purge, cur_time, FRIEND_PURGE_INTERVAL)) {
-        //     purge_inactive_friends(m);
-        //     save_data(m, DATA_FILE);
-        //     last_friend_purge = cur_time;
-        // }
+        if (timed_out(last_friend_purge, cur_time, FRIEND_PURGE_INTERVAL)) {
+            purge_inactive_friends(m);
+            save_data(m, DATA_FILE);
+            last_friend_purge = cur_time;
+        }
 
         if (timed_out(last_group_purge, cur_time, GROUP_PURGE_INTERVAL)) {
             purge_empty_groups(m);
