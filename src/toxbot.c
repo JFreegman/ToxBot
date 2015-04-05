@@ -180,12 +180,13 @@ static void cb_friend_connection_change(Tox *m, uint32_t friendnumber, TOX_CONNE
      * We have to do this the hard way because our convenient API function to get
      * the number of online friends has mysteriously vanished
      */
+
+    Tox_Bot.num_online_friends = 0;
+
     size_t i, size = tox_self_get_friend_list_size(m);
 
-    if (size == 0) {
-        Tox_Bot.num_online_friends = 0;
+    if (size == 0)
         return;
-    }
 
     uint32_t list[size];
     tox_self_get_friend_list(m, list);
@@ -368,9 +369,17 @@ static Tox *init_tox(void)
     tox_callback_group_invite(m, cb_group_invite, NULL);
     tox_callback_group_title(m, cb_group_titlechange, NULL);
 
-    const char *statusmsg = "Send me the the command 'help' for more info";
-    tox_self_set_status_message(m, (uint8_t *) statusmsg, strlen(statusmsg), NULL);
-    tox_self_set_name(m, (uint8_t *) "ToxBot", strlen("ToxBot"), NULL);
+    size_t s_len = tox_self_get_status_message_size(m);
+
+    if (s_len == 0) {
+        const char *statusmsg = "Send me the the command 'help' for more info";
+        tox_self_set_status_message(m, (uint8_t *) statusmsg, strlen(statusmsg), NULL);
+    }
+
+    size_t n_len = tox_self_get_name_size(m);
+
+    if (n_len == 0)
+        tox_self_set_name(m, (uint8_t *) "ToxBot", strlen("ToxBot"), NULL);
 
     return m;
 }
