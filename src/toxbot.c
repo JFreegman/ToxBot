@@ -327,7 +327,7 @@ static Tox *load_tox(struct Tox_Options *options, char *path)
 
     off_t data_len = file_size(path);
 
-    if (data_len == -1) {
+    if (data_len == 0) {
         fclose(fp);
         return NULL;
     }
@@ -355,7 +355,7 @@ static Tox *init_tox(void)
 {
     struct Tox_Options tox_opts;
     memset(&tox_opts, 0, sizeof(struct Tox_Options));
-    tox_opts.ipv6_enabled = 1;
+    tox_options_default(&tox_opts);
 
     Tox *m = load_tox(&tox_opts, DATA_FILE);
 

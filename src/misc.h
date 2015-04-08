@@ -39,7 +39,7 @@ char *hex_string_to_bin(const char *hex_string);
 /* checks if a file exists. Returns true or false */
 bool file_exists(const char *path);
 
-/* returns file size or -1 on error */
+/* returns file size or 0 on error */
 off_t file_size(const char *path);
 
 /* copies data to msg buffer.

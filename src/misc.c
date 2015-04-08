@@ -63,7 +63,7 @@ off_t file_size(const char *path)
     struct stat st;
 
     if (stat(path, &st) == -1)
-        return -1;
+        return 0;
 
     return st.st_size;
 }
