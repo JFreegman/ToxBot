@@ -314,7 +314,7 @@ static Tox *load_tox(struct Tox_Options *options, char *path)
 
     if (fp == NULL) {
         TOX_ERR_NEW err;
-        m = tox_new(options, NULL, 0, &err);
+        m = tox_new(options, &err);
 
         if (err != TOX_ERR_NEW_OK) {
             fprintf(stderr, "tox_new failed with error %d\n", err);
@@ -340,7 +340,11 @@ static Tox *load_tox(struct Tox_Options *options, char *path)
     }
 
     TOX_ERR_NEW err;
-    m = tox_new(options, (uint8_t *) data, data_len, &err);
+    options->savedata_type = TOX_SAVEDATA_TYPE_TOX_SAVE;
+    options->savedata_data = (uint8_t *) data;
+    options->savedata_length = data_len;
+
+    m = tox_new(options, &err);
 
     if (err != TOX_ERR_NEW_OK) {
         fprintf(stderr, "tox_new failed with error %d\n", err);
