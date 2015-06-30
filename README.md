@@ -1,5 +1,5 @@
 # ToxBot
-ToxBot is a remotely controlled [Tox](https://tox.im) bot whose purpose is to auto-invite friends to Tox groupchats. It accepts friend requests automatically and will auto-invite friends to the specified group chat (default is group 0 unless set otherwise). It also has the ability to create and leave groups, password protect invites, and send messages to groups.
+ToxBot is a remotely controlled [Tox](https://tox.chat) bot whose purpose is to auto-invite friends to Tox groupchats. It accepts friend requests automatically and will auto-invite friends to the specified group chat (default is group 0 unless set otherwise). It also has the ability to create and leave groups, password protect invites, and send messages to groups.
 
 Although current functionality is barebones, it will be easy to expand the bot to act in more comprehensive ways once Tox group chats are fully implemented (e.g. admin duties); this was the main motivation behind creating a proper Tox bot.
 
