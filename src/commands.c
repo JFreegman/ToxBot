@@ -483,6 +483,11 @@ static void cmd_passwd(Tox *m, int friendnum, int argc, char (*argv)[MAX_COMMAND
 {
     const char *outmsg = NULL;
 
+    if (!friend_is_master(m, friendnum)) {
+        authent_failed(m, friendnum);
+        return;
+    }
+
     if (argc < 1) {
         outmsg = "Error: group number required";
         tox_friend_send_message(m, friendnum, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *) outmsg, strlen(outmsg), NULL);
