@@ -27,6 +27,7 @@
 #include <strings.h>
 #include <stdbool.h>
 #include <time.h>
+#include <inttypes.h>
 
 #include <tox/tox.h>
 #include <tox/toxav.h>

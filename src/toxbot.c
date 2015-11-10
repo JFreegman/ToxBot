@@ -32,6 +32,7 @@
 #include <time.h>
 #include <limits.h>
 #include <signal.h>
+#include <inttypes.h>
 
 #include <tox/tox.h>
 #include <tox/toxav.h>
