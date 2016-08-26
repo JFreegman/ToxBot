@@ -377,7 +377,7 @@ static Tox *init_tox(void)
     size_t s_len = tox_self_get_status_message_size(m);
 
     if (s_len == 0) {
-        const char *statusmsg = "Send me the the command 'help' for more info";
+        const char *statusmsg = "Send me the command 'help' for more info";
         tox_self_set_status_message(m, (uint8_t *) statusmsg, strlen(statusmsg), NULL);
     }
 
