@@ -395,13 +395,14 @@ static struct toxNodes {
     uint16_t    port;
     const char *key;
 } nodes[] = {
-    { "tox.zodiaclabs.org", 33445, "A09162D68618E742FFBCA1C2C70385E6679604B2D80EA6E84AD0996A1AC8A074" },
-    { "biribiri.org",       33445, "F404ABAA1C99A9D37D61AB54898F56793E1DEF8BD46B1038B9D822E8460FAB67" },
     { "178.62.250.138",     33445, "788236D34978D1D5BD822F0A5BEBD2C53C64CC31CD3149350EE27D4D9A2F9B6B" },
     { "130.133.110.14",     33445, "461FA3776EF0FA655F1A05477DF1B3B614F7D6B124F7DB1DD4FE3C08B03B640F" },
     { "128.199.199.197",    33445, "B05C8869DBB4EDDD308F43C1A974A20A725A36EACCA123862FDE9945BF9D3E09" },
     { "146.185.136.123",    33445, "09993FAF174DFFDC515B398A2EFC5639C4E6D7B736FC864F89786B50EAF88C1A" },
     { "193.124.186.205",    5228,  "9906D65F2A4751068A59D30505C5FC8AE1A95E0843AE9372EAFA3BAB6AC16C2C" },
+    { "185.25.116.107",     33445, "DA4E4ED4B697F2E9B000EEFE3A34B554ACD3F45F5C96EAEA2516DD7FF9AF7B43" },
+    { "5.189.176.217",      33445, "2B2137E094F743AC8BD44652C55F41DFACC502F125E99E4FE24D40537489E32F" },
+    { "46.101.197.175",     443,   "CD133B521159541FB1D326DE9850F5E56A6C724B5B8E5EB5CD8D950408E95707" },
     { NULL, 0, NULL },
 };
 
@@ -496,25 +497,6 @@ static void purge_empty_groups(Tox *m)
     }
 }
 
-#define REC_TOX_DO_LOOPS_PER_SEC 25
-
-/* Adjusts usleep value so that tox_do runs close to the recommended number of times per second */
-static useconds_t optimal_msleepval(uint64_t *looptimer, uint64_t *loopcount, uint64_t cur_time, useconds_t msleepval)
-{
-    useconds_t new_sleep = MAX(msleepval, 3);
-    ++(*loopcount);
-
-    if (*looptimer == cur_time)
-        return new_sleep;
-
-    if (*loopcount != REC_TOX_DO_LOOPS_PER_SEC)
-        new_sleep *= (double) *loopcount / REC_TOX_DO_LOOPS_PER_SEC;
-
-    *looptimer = cur_time;
-    *loopcount = 0;
-    return new_sleep;
-}
-
 int main(int argc, char **argv)
 {
     signal(SIGINT, catch_SIGINT);
@@ -529,11 +511,8 @@ int main(int argc, char **argv)
     print_profile_info(m);
     bootstrap_DHT(m);
 
-    uint64_t looptimer = (uint64_t) time(NULL);
     uint64_t last_friend_purge = 0;
     uint64_t last_group_purge = 0;
-    useconds_t msleepval = 40000;
-    uint64_t loopcount = 0;
 
     while (!FLAG_EXIT) {
         uint64_t cur_time = (uint64_t) time(NULL);
@@ -550,9 +529,7 @@ int main(int argc, char **argv)
         }
 
         tox_iterate(m);
-
-        msleepval = optimal_msleepval(&looptimer, &loopcount, cur_time, msleepval);
-        usleep(msleepval);
+        usleep(tox_iteration_interval(m) * 1000);;
     }
 
     exit_toxbot(m);
