@@ -493,6 +493,10 @@ static void purge_empty_groups(Tox *m)
             fprintf(stderr, "Deleting empty group %i\n", Tox_Bot.g_chats[i].num);
             tox_del_groupchat(m, i);
             group_leave(i);
+
+            if (i >= Tox_Bot.chats_idx) {   // group_leave modifies chats_idx
+                return;
+            }
         }
     }
 }
