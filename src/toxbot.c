@@ -68,35 +68,28 @@ static void catch_SIGINT(int sig)
     FLAG_EXIT = true;
 }
 
-static void exit_groupchats(Tox *m, uint32_t numchats)
+static void exit_groupchats(Tox *m, size_t numchats)
 {
     memset(Tox_Bot.g_chats, 0, Tox_Bot.chats_idx * sizeof(struct Group_Chat));
     realloc_groupchats(0);
 
-    int32_t *groupchat_list = malloc(numchats * sizeof(int32_t));
+    uint32_t chatlist[numchats];
+    tox_conference_get_chatlist(m, chatlist);
 
-    if (groupchat_list == NULL)
-        return;
+    size_t i;
 
-    if (tox_get_chatlist(m, groupchat_list, numchats) == 0) {
-        free(groupchat_list);
-        return;
+    for (i = 0; i < numchats; ++i) {
+        tox_conference_delete(m, chatlist[i], NULL);
     }
-
-    uint32_t i;
-
-    for (i = 0; i < numchats; ++i)
-        tox_del_groupchat(m, groupchat_list[i]);
-
-    free(groupchat_list);
 }
 
 static void exit_toxbot(Tox *m)
 {
-    uint32_t numchats = tox_count_chatlist(m);
+    size_t numchats = tox_conference_get_chatlist_size(m);
 
-    if (numchats)
+    if (numchats) {
         exit_groupchats(m, numchats);
+    }
 
     save_data(m, DATA_FILE);
     tox_kill(m);
@@ -227,8 +220,8 @@ static void cb_friend_message(Tox *m, uint32_t friendnumber, TOX_MESSAGE_TYPE ty
     }
 }
 
-static void cb_group_invite(Tox *m, int32_t friendnumber, uint8_t type, const uint8_t *group_pub_key, uint16_t length,
-                            void *userdata)
+static void cb_group_invite(Tox *m, uint32_t friendnumber, TOX_CONFERENCE_TYPE type,
+                            const uint8_t *cookie, size_t length, void *userdata)
 {
     if (!friend_is_master(m, friendnumber))
         return;
@@ -240,27 +233,36 @@ static void cb_group_invite(Tox *m, int32_t friendnumber, uint8_t type, const ui
 
     int groupnum = -1;
 
-    if (type == TOX_GROUPCHAT_TYPE_TEXT)
-        groupnum = tox_join_groupchat(m, friendnumber, group_pub_key, length);
-    else if (type == TOX_GROUPCHAT_TYPE_AV)
-        groupnum = toxav_join_av_groupchat(m, friendnumber, group_pub_key, length, NULL, NULL);
+    if (type == TOX_CONFERENCE_TYPE_TEXT) {
+        TOX_ERR_CONFERENCE_JOIN err;
+        groupnum = tox_conference_join(m, friendnumber, cookie, length, &err);
 
-    if (groupnum == -1) {
-        fprintf(stderr, "Invite from %s failed (core failure)\n", name);
-        return;
+        if (err != TOX_ERR_CONFERENCE_JOIN_OK) {
+            goto on_error;
+        }
+    } else if (type == TOX_CONFERENCE_TYPE_AV) {
+        groupnum = toxav_join_av_groupchat(m, friendnumber, cookie, length, NULL, NULL);
+
+        if (groupnum == -1) {
+            goto on_error;
+        }
     }
 
     if (group_add(groupnum, type, NULL) == -1) {
         fprintf(stderr, "Invite from %s failed (group_add failed)\n", name);
-        tox_del_groupchat(m, groupnum);
+        tox_conference_delete(m, groupnum, NULL);
         return;
     }
 
     printf("Accepted groupchat invite from %s [%d]\n", name, groupnum);
+    return;
+
+on_error:
+    fprintf(stderr, "Invite from %s failed (core failure)\n", name);
 }
 
-static void cb_group_titlechange(Tox *m, int groupnumber, int peernumber, const uint8_t *title, uint8_t length,
-                                 void *userdata)
+static void cb_group_titlechange(Tox *m, uint32_t groupnumber, uint32_t peernumber, const uint8_t *title,
+                                 size_t length, void *userdata)
 {
     char message[TOX_MAX_MESSAGE_LENGTH];
     length = copy_tox_str(message, sizeof(message), (const char *) title, length);
@@ -367,12 +369,12 @@ static Tox *init_tox(void)
     if (!m)
         return NULL;
 
-    tox_callback_self_connection_status(m, cb_self_connection_change, NULL);
-    tox_callback_friend_connection_status(m, cb_friend_connection_change, NULL);
-    tox_callback_friend_request(m, cb_friend_request, NULL);
-    tox_callback_friend_message(m, cb_friend_message, NULL);
-    tox_callback_group_invite(m, cb_group_invite, NULL);
-    tox_callback_group_title(m, cb_group_titlechange, NULL);
+    tox_callback_self_connection_status(m, cb_self_connection_change);
+    tox_callback_friend_connection_status(m, cb_friend_connection_change);
+    tox_callback_friend_request(m, cb_friend_request);
+    tox_callback_friend_message(m, cb_friend_message);
+    tox_callback_conference_invite(m, cb_group_invite);
+    tox_callback_conference_title(m, cb_group_titlechange);
 
     size_t s_len = tox_self_get_status_message_size(m);
 
@@ -487,11 +489,12 @@ static void purge_empty_groups(Tox *m)
         if (!Tox_Bot.g_chats[i].active)
             continue;
 
-        int num_peers = tox_group_number_peers(m, Tox_Bot.g_chats[i].num);
+        TOX_ERR_CONFERENCE_PEER_QUERY err;
+        uint32_t num_peers = tox_conference_peer_count(m, Tox_Bot.g_chats[i].groupnum, &err);
 
-        if (num_peers <= 1) {
-            fprintf(stderr, "Deleting empty group %i\n", Tox_Bot.g_chats[i].num);
-            tox_del_groupchat(m, i);
+        if (err != TOX_ERR_CONFERENCE_PEER_QUERY_OK || num_peers <= 1) {
+            fprintf(stderr, "Deleting empty group %i\n", Tox_Bot.g_chats[i].groupnum);
+            tox_conference_delete(m, Tox_Bot.g_chats[i].groupnum, NULL);
             group_leave(i);
 
             if (i >= Tox_Bot.chats_idx) {   // group_leave modifies chats_idx
@@ -532,7 +535,7 @@ int main(int argc, char **argv)
             last_group_purge = cur_time;
         }
 
-        tox_iterate(m);
+        tox_iterate(m, NULL);
         usleep(tox_iteration_interval(m) * 1000);;
     }
 
