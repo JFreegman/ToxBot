@@ -14,6 +14,9 @@ all: $(OBJ)
 	@$(CC) $(CFLAGS) -o $*.o -c $(SRC_DIR)/$*.c
 	@$(CC) -MM $(CFLAGS) $(SRC_DIR)/$*.c > $*.d
 
+install: toxbot
+	@install toxbot $(DESTDIR)$(PREFIX)/bin
+
 clean: 
 	rm -f *.d *.o toxbot
 
