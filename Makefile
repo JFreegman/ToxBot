@@ -1,4 +1,4 @@
-LIBS = libtoxcore libtoxav
+LIBS = toxcore
 CFLAGS += -std=gnu99 -Wall -ggdb -D_XOPEN_SOURCE_EXTENDED -D_XOPEN_SOURCE -D_FILE_OFFSET_BITS=64
 OBJ = toxbot.o misc.o commands.o groupchats.o
 CFLAGS += $(shell pkg-config --cflags $(LIBS))
