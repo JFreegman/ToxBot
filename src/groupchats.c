@@ -53,7 +53,7 @@ int group_add(uint32_t groupnum, uint8_t type, const char *password)
 
     int i;
 
-    for (i = 0; i <= Tox_Bot.chats_idx; ++i) {
+    for (i = 0; i <= Tox_Bot.chats_idx && i < MAX_NUM_GROUPS; ++i) {
         if (Tox_Bot.g_chats[i].active)
             continue;
 
