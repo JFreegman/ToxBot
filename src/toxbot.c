@@ -45,7 +45,6 @@
 #define VERSION "0.0.2"
 #define FRIEND_PURGE_INTERVAL (60 * 60)
 #define GROUP_PURGE_INTERVAL (60 * 10)
-#define MAX_NUM_GROUPS 256
 
 bool FLAG_EXIT = false;    /* set on SIGINT */
 char *DATA_FILE = "toxbot_save";

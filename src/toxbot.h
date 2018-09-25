@@ -27,6 +27,8 @@
 #include <tox/tox.h>
 #include "groupchats.h"
 
+#define MAX_NUM_GROUPS 256
+
 struct Tox_Bot {
     uint64_t start_time;
     uint64_t inactive_limit;
