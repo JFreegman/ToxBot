@@ -427,6 +427,7 @@ static void bootstrap_DHT(Tox *m)
 static void print_profile_info(Tox *m)
 {
     printf("ToxBot version %s\n", VERSION);
+    printf("Toxcore version %d.%d.%d\n", tox_version_major(), tox_version_minor(), tox_version_patch());
     printf("ID: ");
 
     char address[TOX_ADDRESS_SIZE];
