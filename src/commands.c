@@ -45,7 +45,7 @@ extern struct Tox_Bot Tox_Bot;
 
 static void authent_failed(Tox *m, uint32_t friendnum)
 {
-    const char *outmsg = "Invalid command.";
+    const char *outmsg = "You do not have permission to use this command.";
     tox_friend_send_message(m, friendnum, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *) outmsg, strlen(outmsg), NULL);
 }
 
