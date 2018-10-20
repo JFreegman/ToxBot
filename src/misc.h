@@ -36,9 +36,6 @@ bool timed_out(uint64_t timestamp, uint64_t curtime, uint64_t timeout);
 /* converts hexidecimal string to binary */
 char *hex_string_to_bin(const char *hex_string);
 
-/* checks if a file exists. Returns true or false */
-bool file_exists(const char *path);
-
 /* returns file size or 0 on error */
 off_t file_size(const char *path);
 
@@ -52,5 +49,16 @@ int char_find(int idx, const char *s, char ch);
 
 /* Converts seconds to string in format days hours minutes */
 void get_elapsed_time_str(char *buf, int bufsize, uint64_t secs);
+
+/*
+ * Searches plain text file pointed to by path for lines that match public_key.
+ *
+ * Returns 1 if a match is found.
+ * Returns 0 if a match is not found.
+ * Returns -1 on file operation failure.
+ *
+ * public_key must be a binary representation of a Tox public key.
+ */
+int file_contains_key(const char *public_key, const char *path);
 
 #endif /* MISC_H */

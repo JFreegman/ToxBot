@@ -42,13 +42,14 @@
 #include "toxbot.h"
 #include "groupchats.h"
 
-#define VERSION "0.0.2"
+#define VERSION "0.0.3"
 #define FRIEND_PURGE_INTERVAL (60 * 60)
 #define GROUP_PURGE_INTERVAL (60 * 10)
 
 bool FLAG_EXIT = false;    /* set on SIGINT */
-char *DATA_FILE = "toxbot_save";
-char *MASTERLIST_FILE = "masterkeys";
+char *DATA_FILE        = "toxbot_save";
+char *MASTERLIST_FILE  = "masterkeys";
+char *BLOCKLIST_FILE   = "blockedkeys";
 
 struct Tox_Bot Tox_Bot;
 
@@ -96,59 +97,22 @@ static void exit_toxbot(Tox *m)
     exit(EXIT_SUCCESS);
 }
 
-/* Returns true if friendnumber's Tox ID is in the masterkeys list, false otherwise.
-   Note that it only compares the public key portion of the IDs. */
+/* Returns true if friendnumber's Tox ID is in the masterkeys list. */
 bool friend_is_master(Tox *m, uint32_t friendnumber)
 {
-    if (!file_exists(MASTERLIST_FILE)) {
-        FILE *fp = fopen(MASTERLIST_FILE, "w");
+    char public_key[TOX_PUBLIC_KEY_SIZE];
 
-        if (fp == NULL) {
-            fprintf(stderr, "Warning: failed to create masterkeys file\n");
-            return false;
-        }
-
-        fclose(fp);
-        fprintf(stderr, "Warning: creating new masterkeys file. Did you lose the old one?\n");
+    if (tox_friend_get_public_key(m, friendnumber, (uint8_t *) public_key, NULL) == 0) {
         return false;
     }
 
-    FILE *fp = fopen(MASTERLIST_FILE, "r");
+    return file_contains_key(public_key, MASTERLIST_FILE) == 1;
+}
 
-    if (fp == NULL) {
-        fprintf(stderr, "Warning: failed to read masterkeys file\n");
-        return false;
-    }
-
-    char friend_key[TOX_PUBLIC_KEY_SIZE];
-
-    if (tox_friend_get_public_key(m, friendnumber, (uint8_t *) friend_key, NULL) == 0) {
-        fclose(fp);
-        return false;
-    }
-
-    char id[256];
-
-    while (fgets(id, sizeof(id), fp)) {
-        int len = strlen(id);
-
-        if (--len < TOX_PUBLIC_KEY_SIZE) {
-            continue;
-        }
-
-        char *key_bin = hex_string_to_bin(id);
-
-        if (memcmp(key_bin, friend_key, TOX_PUBLIC_KEY_SIZE) == 0) {
-            free(key_bin);
-            fclose(fp);
-            return true;
-        }
-
-        free(key_bin);
-    }
-
-    fclose(fp);
-    return false;
+/* Returns true if public_key is in the blockedkeys list. */
+static bool public_key_is_blocked(const char *public_key)
+{
+    return file_contains_key(public_key, BLOCKLIST_FILE) == 1;
 }
 
 /* START CALLBACKS */
@@ -192,6 +156,10 @@ static void cb_friend_connection_change(Tox *m, uint32_t friendnumber, TOX_CONNE
 static void cb_friend_request(Tox *m, const uint8_t *public_key, const uint8_t *data, size_t length,
                               void *userdata)
 {
+    if (public_key_is_blocked((char *) public_key)) {
+        return;
+    }
+
     TOX_ERR_FRIEND_ADD err;
     tox_friend_add_norequest(m, public_key, &err);
 
@@ -206,6 +174,17 @@ static void cb_friend_message(Tox *m, uint32_t friendnumber, TOX_MESSAGE_TYPE ty
                               size_t length, void *userdata)
 {
     if (type != TOX_MESSAGE_TYPE_NORMAL) {
+        return;
+    }
+
+    char public_key[TOX_PUBLIC_KEY_SIZE];
+
+    if (tox_friend_get_public_key(m, friendnumber, (uint8_t *) public_key, NULL) == 0) {
+        return;
+    }
+
+    if (public_key_is_blocked(public_key)) {
+        tox_friend_delete(m, friendnumber, NULL);
         return;
     }
 

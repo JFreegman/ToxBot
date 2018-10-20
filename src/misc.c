@@ -29,6 +29,8 @@
 #include <stdbool.h>
 #include <unistd.h>
 
+#include <tox/tox.h>
+
 #include "misc.h"
 
 bool timed_out(uint64_t timestamp, uint64_t curtime, uint64_t timeout)
@@ -52,12 +54,6 @@ char *hex_string_to_bin(const char *hex_string)
     }
 
     return val;
-}
-
-bool file_exists(const char *path)
-{
-    struct stat s;
-    return stat(path, &s) == 0;
 }
 
 off_t file_size(const char *path)
@@ -99,4 +95,63 @@ void get_elapsed_time_str(char *buf, int bufsize, uint64_t secs)
     long unsigned int days = (secs / 3600) / 24;
 
     snprintf(buf, bufsize, "%lud %luh %lum", days, hours, minutes);
+}
+
+/*
+ * Searches plain text file pointed to by path for lines that match public_key.
+ *
+ * Returns 1 if a match is found.
+ * Returns 0 if a match is not found.
+ * Returns -1 on file operation failure.
+ *
+ * public_key must be a binary representation of a Tox public key.
+ */
+int file_contains_key(const char *public_key, const char *path)
+{
+    FILE *fp = NULL;
+
+    struct stat s;
+
+    if (stat(path, &s) != 0) {
+        FILE *fp = fopen(path, "w");
+
+        if (fp == NULL) {
+            fprintf(stderr, "Warning: failed to create '%s' file\n", path);
+            return -1;
+        }
+
+        fprintf(stderr, "Warning: creating new '%s' file. Did you lose the old one?\n", path);
+        fclose(fp);
+        return 0;
+    }
+
+    fp = fopen(path, "r");
+
+    if (fp == NULL) {
+        fprintf(stderr, "Warning: failed to read '%s' file\n", path);
+        return -1;
+    }
+
+    char id[256];
+
+    while (fgets(id, sizeof(id), fp)) {
+        int len = strlen(id);
+
+        if (--len < TOX_PUBLIC_KEY_SIZE) {
+            continue;
+        }
+
+        char *key_bin = hex_string_to_bin(id);
+
+        if (memcmp(key_bin, public_key, TOX_PUBLIC_KEY_SIZE) == 0) {
+            free(key_bin);
+            fclose(fp);
+            return 1;
+        }
+
+        free(key_bin);
+    }
+
+    fclose(fp);
+    return 0;
 }
