@@ -41,13 +41,15 @@ char *hex_string_to_bin(const char *hex_string)
     size_t len = strlen(hex_string);
     char *val = malloc(len);
 
-    if (val == NULL)
+    if (val == NULL) {
         exit(EXIT_FAILURE);
+    }
 
     size_t i;
 
-    for (i = 0; i < len; ++i, hex_string += 2)
+    for (i = 0; i < len; ++i, hex_string += 2) {
         sscanf(hex_string, "%2hhx", &val[i]);
+    }
 
     return val;
 }
@@ -62,8 +64,9 @@ off_t file_size(const char *path)
 {
     struct stat st;
 
-    if (stat(path, &st) == -1)
+    if (stat(path, &st) == -1) {
         return 0;
+    }
 
     return st.st_size;
 }
@@ -81,8 +84,9 @@ int char_find(int idx, const char *s, char ch)
     int i = idx;
 
     for (i = idx; s[i]; ++i) {
-        if (s[i] == ch)
+        if (s[i] == ch) {
             break;
+        }
     }
 
     return i;

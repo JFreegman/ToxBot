@@ -40,8 +40,9 @@ void realloc_groupchats(int n)
 
     struct Group_Chat *g = realloc(Tox_Bot.g_chats, n * sizeof(struct Group_Chat));
 
-    if (g == NULL)
+    if (g == NULL) {
         exit(EXIT_FAILURE);
+    }
 
     Tox_Bot.g_chats = g;
 }
@@ -54,8 +55,9 @@ int group_add(uint32_t groupnum, uint8_t type, const char *password)
     int i;
 
     for (i = 0; i <= Tox_Bot.chats_idx && i < MAX_NUM_GROUPS; ++i) {
-        if (Tox_Bot.g_chats[i].active)
+        if (Tox_Bot.g_chats[i].active) {
             continue;
+        }
 
         memset(&Tox_Bot.g_chats[i], 0, sizeof(struct Group_Chat));
         Tox_Bot.g_chats[i].groupnum = groupnum;
@@ -67,8 +69,9 @@ int group_add(uint32_t groupnum, uint8_t type, const char *password)
             snprintf(Tox_Bot.g_chats[i].password, sizeof(Tox_Bot.g_chats[i].password), "%s", password);
         }
 
-        if (Tox_Bot.chats_idx == i)
+        if (Tox_Bot.chats_idx == i) {
             ++Tox_Bot.chats_idx;
+        }
 
         return 0;
     }
@@ -88,8 +91,9 @@ void group_leave(uint32_t groupnum)
     }
 
     for (i = Tox_Bot.chats_idx; i > 0; --i) {
-        if (Tox_Bot.g_chats[i - 1].active)
+        if (Tox_Bot.g_chats[i - 1].active) {
             break;
+        }
     }
 
     Tox_Bot.chats_idx = i;
@@ -101,8 +105,9 @@ int group_index(uint32_t groupnum)
     int i;
 
     for (i = 0; i < Tox_Bot.chats_idx; ++i) {
-        if (Tox_Bot.g_chats[i].active && Tox_Bot.g_chats[i].groupnum == groupnum)
+        if (Tox_Bot.g_chats[i].active && Tox_Bot.g_chats[i].groupnum == groupnum) {
             return i;
+        }
     }
 
     return -1;

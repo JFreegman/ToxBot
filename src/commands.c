@@ -262,7 +262,7 @@ static void cmd_id(Tox *m, uint32_t friendnum, int argc, char (*argv)[MAX_COMMAN
     }
 
     outmsg[TOX_ADDRESS_SIZE * 2] = '\0';
-    tox_friend_send_message(m, friendnum, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *) outmsg, strlen(outmsg) , NULL);
+    tox_friend_send_message(m, friendnum, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *) outmsg, strlen(outmsg), NULL);
 }
 
 static void cmd_info(Tox *m, uint32_t friendnum, int argc, char (*argv)[MAX_COMMAND_LENGTH])
@@ -280,14 +280,15 @@ static void cmd_info(Tox *m, uint32_t friendnum, int argc, char (*argv)[MAX_COMM
     tox_friend_send_message(m, friendnum, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *) outmsg, strlen(outmsg), NULL);
 
     snprintf(outmsg, sizeof(outmsg), "Inactive friends are purged after %"PRIu64" days",
-                                      Tox_Bot.inactive_limit / SECONDS_IN_DAY);
+             Tox_Bot.inactive_limit / SECONDS_IN_DAY);
     tox_friend_send_message(m, friendnum, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *) outmsg, strlen(outmsg), NULL);
 
     /* List active group chats and number of peers in each */
     size_t num_chats = tox_conference_get_chatlist_size(m);
 
     if (num_chats == 0) {
-        tox_friend_send_message(m, friendnum, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *) "No active groupchats", strlen("No active groupchats"), NULL);
+        tox_friend_send_message(m, friendnum, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *) "No active groupchats",
+                                strlen("No active groupchats"), NULL);
         return;
     }
 
@@ -305,10 +306,10 @@ static void cmd_info(Tox *m, uint32_t friendnum, int argc, char (*argv)[MAX_COMM
         if (err == TOX_ERR_CONFERENCE_PEER_QUERY_OK) {
             int idx = group_index(groupnum);
             const char *title = Tox_Bot.g_chats[idx].title_len
-                              ? Tox_Bot.g_chats[idx].title : "None";
+                                ? Tox_Bot.g_chats[idx].title : "None";
             const char *type = tox_conference_get_type(m, groupnum, NULL) == TOX_CONFERENCE_TYPE_AV ? "Audio" : "Text";
             snprintf(outmsg, sizeof(outmsg), "Group %d | %s | peers: %d | Title: %s", groupnum, type,
-                                                                                      num_peers, title);
+                     num_peers, title);
             tox_friend_send_message(m, friendnum, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *) outmsg, strlen(outmsg), NULL);
         }
     }
@@ -346,8 +347,9 @@ static void cmd_invite(Tox *m, uint32_t friendnum, int argc, char (*argv)[MAX_CO
 
     const char *passwd = NULL;
 
-    if (argc >= 2)
+    if (argc >= 2) {
         passwd = argv[2];
+    }
 
     if (has_pass && (!passwd || strcmp(argv[2], Tox_Bot.g_chats[idx].password) != 0)) {
         fprintf(stderr, "Failed to invite %s to group %d (invalid password)\n", name, groupnum);
@@ -612,13 +614,13 @@ static void cmd_status(Tox *m, uint32_t friendnum, int argc, char (*argv)[MAX_CO
     TOX_USER_STATUS type;
     const char *status = argv[1];
 
-    if (strcasecmp(status, "online") == 0)
+    if (strcasecmp(status, "online") == 0) {
         type = TOX_USER_STATUS_NONE;
-    else if (strcasecmp(status, "away") == 0)
+    } else if (strcasecmp(status, "away") == 0) {
         type = TOX_USER_STATUS_AWAY;
-    else if (strcasecmp(status, "busy") == 0)
+    } else if (strcasecmp(status, "busy") == 0) {
         type = TOX_USER_STATUS_BUSY;
-    else {
+    } else {
         outmsg = "Invalid status. Valid statuses are: online, busy and away.";
         tox_friend_send_message(m, friendnum, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *) outmsg, strlen(outmsg), NULL);
         return;
@@ -737,8 +739,9 @@ static int parse_command(const char *input, char (*args)[MAX_COMMAND_LENGTH])
 {
     char *cmd = strdup(input);
 
-    if (cmd == NULL)
+    if (cmd == NULL) {
         exit(EXIT_FAILURE);
+    }
 
     int num_args = 0;
     int i = 0;    /* index of last char in an argument */
@@ -762,8 +765,9 @@ static int parse_command(const char *input, char (*args)[MAX_COMMAND_LENGTH])
         memcpy(args[num_args], cmd, i + qt_ofst);
         args[num_args++][i + qt_ofst] = '\0';
 
-        if (cmd[i] == '\0')    /* no more args */
+        if (cmd[i] == '\0') {  /* no more args */
             break;
+        }
 
         char tmp[MAX_COMMAND_LENGTH];
         snprintf(tmp, sizeof(tmp), "%s", &cmd[i + 1]);
@@ -812,14 +816,16 @@ static int do_command(Tox *m, uint32_t friendnum, int num_args, char (*args)[MAX
 
 int execute(Tox *m, uint32_t friendnum, const char *input, int length)
 {
-    if (length >= MAX_COMMAND_LENGTH)
+    if (length >= MAX_COMMAND_LENGTH) {
         return -1;
+    }
 
     char args[MAX_NUM_ARGS][MAX_COMMAND_LENGTH];
     int num_args = parse_command(input, args);
 
-    if (num_args == -1)
+    if (num_args == -1) {
         return -1;
+    }
 
     return do_command(m, friendnum, num_args, args);
 }

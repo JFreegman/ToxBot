@@ -121,6 +121,7 @@ bool friend_is_master(Tox *m, uint32_t friendnumber)
     }
 
     char friend_key[TOX_PUBLIC_KEY_SIZE];
+
     if (tox_friend_get_public_key(m, friendnumber, (uint8_t *) friend_key, NULL) == 0) {
         fclose(fp);
         return false;
@@ -131,8 +132,9 @@ bool friend_is_master(Tox *m, uint32_t friendnumber)
     while (fgets(id, sizeof(id), fp)) {
         int len = strlen(id);
 
-        if (--len < TOX_PUBLIC_KEY_SIZE)
+        if (--len < TOX_PUBLIC_KEY_SIZE) {
             continue;
+        }
 
         char *key_bin = hex_string_to_bin(id);
 
@@ -169,25 +171,21 @@ static void cb_self_connection_change(Tox *m, TOX_CONNECTION connection_status, 
 
 static void cb_friend_connection_change(Tox *m, uint32_t friendnumber, TOX_CONNECTION connection_status, void *userdata)
 {
-    /* Count the number of online friends.
-     *
-     * We have to do this the hard way because our convenient API function to get
-     * the number of online friends has mysteriously vanished
-     */
-
     Tox_Bot.num_online_friends = 0;
 
     size_t i, size = tox_self_get_friend_list_size(m);
 
-    if (size == 0)
+    if (size == 0) {
         return;
+    }
 
     uint32_t list[size];
     tox_self_get_friend_list(m, list);
 
     for (i = 0; i < size; ++i) {
-        if (tox_friend_get_connection_status(m, list[i], NULL) != TOX_CONNECTION_NONE)
+        if (tox_friend_get_connection_status(m, list[i], NULL) != TOX_CONNECTION_NONE) {
             ++Tox_Bot.num_online_friends;
+        }
     }
 }
 
@@ -197,8 +195,9 @@ static void cb_friend_request(Tox *m, const uint8_t *public_key, const uint8_t *
     TOX_ERR_FRIEND_ADD err;
     tox_friend_add_norequest(m, public_key, &err);
 
-    if (err != TOX_ERR_FRIEND_ADD_OK)
+    if (err != TOX_ERR_FRIEND_ADD_OK) {
         fprintf(stderr, "tox_friend_add_norequest failed (error %d)\n", err);
+    }
 
     save_data(m, DATA_FILE);
 }
@@ -206,8 +205,9 @@ static void cb_friend_request(Tox *m, const uint8_t *public_key, const uint8_t *
 static void cb_friend_message(Tox *m, uint32_t friendnumber, TOX_MESSAGE_TYPE type, const uint8_t *string,
                               size_t length, void *userdata)
 {
-    if (type != TOX_MESSAGE_TYPE_NORMAL)
+    if (type != TOX_MESSAGE_TYPE_NORMAL) {
         return;
+    }
 
     const char *outmsg;
     char message[TOX_MAX_MESSAGE_LENGTH];
@@ -223,8 +223,9 @@ static void cb_friend_message(Tox *m, uint32_t friendnumber, TOX_MESSAGE_TYPE ty
 static void cb_group_invite(Tox *m, uint32_t friendnumber, TOX_CONFERENCE_TYPE type,
                             const uint8_t *cookie, size_t length, void *userdata)
 {
-    if (!friend_is_master(m, friendnumber))
+    if (!friend_is_master(m, friendnumber)) {
         return;
+    }
 
     char name[TOX_MAX_NAME_LENGTH];
     tox_friend_get_name(m, friendnumber, (uint8_t *) name, NULL);
@@ -269,8 +270,9 @@ static void cb_group_titlechange(Tox *m, uint32_t groupnumber, uint32_t peernumb
 
     int idx = group_index(groupnumber);
 
-    if (idx == -1)
+    if (idx == -1) {
         return;
+    }
 
     memcpy(Tox_Bot.g_chats[idx].title, message, length + 1);
     Tox_Bot.g_chats[idx].title_len = length;
@@ -279,19 +281,22 @@ static void cb_group_titlechange(Tox *m, uint32_t groupnumber, uint32_t peernumb
 
 int save_data(Tox *m, const char *path)
 {
-    if (path == NULL)
+    if (path == NULL) {
         goto on_error;
+    }
 
     FILE *fp = fopen(path, "wb");
 
-    if (fp == NULL)
+    if (fp == NULL) {
         return -1;
+    }
 
     size_t data_len = tox_get_savedata_size(m);
     char *data = malloc(data_len);
 
-    if (data == NULL)
+    if (data == NULL) {
         goto on_error;
+    }
 
     tox_get_savedata(m, (uint8_t *) data);
 
@@ -366,8 +371,9 @@ static Tox *init_tox(void)
 
     Tox *m = load_tox(&tox_opts, DATA_FILE);
 
-    if (!m)
+    if (!m) {
         return NULL;
+    }
 
     tox_callback_self_connection_status(m, cb_self_connection_change);
     tox_callback_friend_connection_status(m, cb_friend_connection_change);
@@ -385,8 +391,9 @@ static Tox *init_tox(void)
 
     size_t n_len = tox_self_get_name_size(m);
 
-    if (n_len == 0)
+    if (n_len == 0) {
         tox_self_set_name(m, (uint8_t *) "ToxBot", strlen("ToxBot"), NULL);
+    }
 
     return m;
 }
@@ -419,8 +426,9 @@ static void bootstrap_DHT(Tox *m)
         tox_bootstrap(m, nodes[i].ip, nodes[i].port, (uint8_t *) key, &err);
         free(key);
 
-        if (err != TOX_ERR_BOOTSTRAP_OK)
+        if (err != TOX_ERR_BOOTSTRAP_OK) {
             fprintf(stderr, "Failed to bootstrap DHT via: %s %d (error %d)\n", nodes[i].ip, nodes[i].port, err);
+        }
     }
 }
 
@@ -457,8 +465,9 @@ static void purge_inactive_friends(Tox *m)
 {
     size_t numfriends = tox_self_get_friend_list_size(m);
 
-    if (numfriends == 0)
+    if (numfriends == 0) {
         return;
+    }
 
     uint32_t friend_list[numfriends];
     tox_self_get_friend_list(m, friend_list);
@@ -468,17 +477,20 @@ static void purge_inactive_friends(Tox *m)
     for (i = 0; i < numfriends; ++i) {
         uint32_t friendnum = friend_list[i];
 
-        if (!tox_friend_exists(m, friendnum))
+        if (!tox_friend_exists(m, friendnum)) {
             continue;
+        }
 
         TOX_ERR_FRIEND_GET_LAST_ONLINE err;
         uint64_t last_online = tox_friend_get_last_online(m, friendnum, &err);
 
-        if (err != TOX_ERR_FRIEND_GET_LAST_ONLINE_OK)
+        if (err != TOX_ERR_FRIEND_GET_LAST_ONLINE_OK) {
             continue;
+        }
 
-        if (((uint64_t) time(NULL)) - last_online > Tox_Bot.inactive_limit)
+        if (((uint64_t) time(NULL)) - last_online > Tox_Bot.inactive_limit) {
             tox_friend_delete(m, friendnum, NULL);
+        }
     }
 }
 
@@ -487,8 +499,9 @@ static void purge_empty_groups(Tox *m)
     uint32_t i;
 
     for (i = 0; i < Tox_Bot.chats_idx; ++i) {
-        if (!Tox_Bot.g_chats[i].active)
+        if (!Tox_Bot.g_chats[i].active) {
             continue;
+        }
 
         TOX_ERR_CONFERENCE_PEER_QUERY err;
         uint32_t num_peers = tox_conference_peer_count(m, Tox_Bot.g_chats[i].groupnum, &err);
@@ -512,8 +525,9 @@ int main(int argc, char **argv)
 
     Tox *m = init_tox();
 
-    if (m == NULL)
+    if (m == NULL) {
         exit(EXIT_FAILURE);
+    }
 
     init_toxbot_state();
     print_profile_info(m);
