@@ -33,6 +33,8 @@
 #include <limits.h>
 #include <signal.h>
 #include <inttypes.h>
+#include <getopt.h>
+#include <stdarg.h>
 
 #include <tox/tox.h>
 #include <tox/toxav.h>
@@ -42,9 +44,12 @@
 #include "toxbot.h"
 #include "groupchats.h"
 
-#define VERSION "0.0.3"
+#define VERSION "0.1.0"
 #define FRIEND_PURGE_INTERVAL (60 * 60)
 #define GROUP_PURGE_INTERVAL (60 * 10)
+#define BOOTSTRAP_INTERVAL 20
+
+#define MAX_PORT_RANGE 65535
 
 bool FLAG_EXIT = false;    /* set on SIGINT */
 char *DATA_FILE        = "toxbot_save";
@@ -52,6 +57,15 @@ char *MASTERLIST_FILE  = "masterkeys";
 char *BLOCKLIST_FILE   = "blockedkeys";
 
 struct Tox_Bot Tox_Bot;
+
+static struct Options {
+    TOX_PROXY_TYPE    proxy_type;
+    char      proxy_host[256];
+    uint16_t  proxy_port;
+    bool      disable_udp;
+    bool      disable_lan;
+    bool      force_ipv4;
+} Options;
 
 static void init_toxbot_state(void)
 {
@@ -120,15 +134,15 @@ static void cb_self_connection_change(Tox *m, TOX_CONNECTION connection_status, 
 {
     switch (connection_status) {
         case TOX_CONNECTION_NONE:
-            fprintf(stderr, "Connection to Tox network has been lost\n");
+            fprintf(stderr, "Connection lost\n");
             break;
 
         case TOX_CONNECTION_TCP:
-            fprintf(stderr, "Connection to Tox network is weak (using TCP)\n");
+            fprintf(stderr, "Connection established (TCP)\n");
             break;
 
         case TOX_CONNECTION_UDP:
-            fprintf(stderr, "Connection to Tox network is strong (using UDP)\n");
+            fprintf(stderr, "Connection established (UDP)\n");
             break;
     }
 }
@@ -342,13 +356,151 @@ static Tox *load_tox(struct Tox_Options *options, char *path)
     return m;
 }
 
+static void print_usage(void)
+{
+    fprintf(stderr, "usage: toxbot [OPTION] ...\n");
+    fprintf(stderr, "    -4, --ipv4              Force IPv4\n");
+    fprintf(stderr, "    -h, --help              Show this message and exit\n");
+    fprintf(stderr, "    -L, --no-lan            Disable LAN\n");
+    fprintf(stderr, "    -P, --HTTP-proxy        Use HTTP proxy. Requires: [IP] [port]\n");
+    fprintf(stderr, "    -p, --SOCKS5-proxy      Use SOCKS proxy. Requires: [IP] [port]\n");
+    fprintf(stderr, "    -t, --force-tcp         Force connections through TCP relays (DHT disabled)\n");
+}
+
+static void set_default_options(void)
+{
+    Options = (struct Options) {
+        0
+    };
+
+    /* set any non-zero defaults here*/
+    Options.proxy_type = TOX_PROXY_TYPE_NONE;
+}
+
+static void parse_args(int argc, char *argv[])
+{
+    set_default_options();
+
+    static struct option long_opts[] = {
+        {"ipv4", no_argument, 0, '4'},
+        {"help", no_argument, 0, 'h'},
+        {"no-lan", no_argument, 0, 'L'},
+        {"SOCKS5-proxy", required_argument, 0, 'p'},
+        {"HTTP-proxy", required_argument, 0, 'P'},
+        {"force-tcp", no_argument, 0, 't'},
+        {NULL, no_argument, NULL, 0},
+    };
+
+    const char *options_string = "4hLtp:P:";
+    int opt = 0;
+    int indexptr = 0;
+
+    while ((opt = getopt_long(argc, argv, options_string, long_opts, &indexptr)) != -1) {
+        switch (opt) {
+            case '4': {
+                Options.force_ipv4 = true;
+                printf("Option set: Forcing IPV4\n");
+                break;
+            }
+
+            case 'h': {
+                print_usage();
+                exit(EXIT_SUCCESS);
+                break;
+            }
+
+            case 'L': {
+                Options.disable_lan = true;
+                printf("Option set: LAN disabled\n");
+                break;
+            }
+
+            case 'p': {
+                Options.proxy_type = TOX_PROXY_TYPE_SOCKS5;
+            }
+
+            // Intentional fallthrough
+
+            case 'P': {
+                if (optarg == NULL) {
+                    fprintf(stderr, "Invalid argument for option: %d", opt);
+                    Options.proxy_type = TOX_PROXY_TYPE_NONE;
+                    break;
+                }
+
+                if (Options.proxy_type != TOX_PROXY_TYPE_SOCKS5) {
+                    Options.proxy_type = TOX_PROXY_TYPE_HTTP;
+                }
+
+                snprintf(Options.proxy_host, sizeof(Options.proxy_host), "%s", optarg);
+
+                if (++optind > argc || argv[optind - 1][0] == '-') {
+                    fprintf(stderr, "Error setting proxy\n");
+                    exit(EXIT_FAILURE);
+                }
+
+                int port = strtol(argv[optind - 1], NULL, 10);
+
+                if (port <= 0 || port > MAX_PORT_RANGE) {
+                    fprintf(stderr, "Invalid port given for proxy\n");
+                    exit(EXIT_FAILURE);
+                }
+
+                Options.proxy_port = port;
+
+                const char *proxy_str = Options.proxy_type == TOX_PROXY_TYPE_SOCKS5 ? "SOCKS5" : "HTTP";
+
+                printf("Option set: %s proxy %s:%d\n", proxy_str, optarg, port);
+            }
+
+            // Intentional fallthrough
+            // we always want UDP disabled if proxy is set
+            // don't change order, as -t must come after -P or -p
+
+            case 't': {
+                Options.disable_udp = true;
+                printf("Option set: UDP/DHT disabled\n");
+                break;
+            }
+
+            default: {
+                print_usage();
+                exit(EXIT_SUCCESS);
+            }
+        }
+    }
+}
+
+static void init_tox_options(struct Tox_Options *tox_opts)
+{
+    tox_options_default(tox_opts);
+
+    tox_options_set_ipv6_enabled(tox_opts, !Options.force_ipv4);
+    tox_options_set_udp_enabled(tox_opts, !Options.disable_udp);
+    tox_options_set_proxy_type(tox_opts, Options.proxy_type);
+    tox_options_set_local_discovery_enabled(tox_opts, !Options.disable_lan);
+
+    if (Options.proxy_type != TOX_PROXY_TYPE_NONE) {
+        tox_options_set_proxy_port(tox_opts, Options.proxy_port);
+        tox_options_set_proxy_host(tox_opts, Options.proxy_host);
+    }
+}
+
 static Tox *init_tox(void)
 {
-    struct Tox_Options tox_opts;
-    memset(&tox_opts, 0, sizeof(struct Tox_Options));
-    tox_options_default(&tox_opts);
+    Tox_Err_Options_New err;
+    struct Tox_Options *tox_opts = tox_options_new(&err);
 
-    Tox *m = load_tox(&tox_opts, DATA_FILE);
+    if (!tox_opts || err != TOX_ERR_OPTIONS_NEW_OK) {
+        fprintf(stderr, "Failed to initialize tox options: error %d\n", err);
+        exit(EXIT_FAILURE);
+    }
+
+    init_tox_options(tox_opts);
+
+    Tox *m = load_tox(tox_opts, DATA_FILE);
+
+    tox_options_free(tox_opts);
 
     if (!m) {
         return NULL;
@@ -407,18 +559,23 @@ static struct toxNodes {
 
 static void bootstrap_DHT(Tox *m)
 {
-    int i;
-
-    for (i = 0; nodes[i].ip; ++i) {
+    for (int i = 0; nodes[i].ip; ++i) {
         char *key = hex_string_to_bin(nodes[i].key);
 
         TOX_ERR_BOOTSTRAP err;
         tox_bootstrap(m, nodes[i].ip, nodes[i].port, (uint8_t *) key, &err);
-        free(key);
 
         if (err != TOX_ERR_BOOTSTRAP_OK) {
-            fprintf(stderr, "Failed to bootstrap DHT via: %s %d (error %d)\n", nodes[i].ip, nodes[i].port, err);
+            fprintf(stderr, "Failed to bootstrap DHT: %s %d (error %d)\n", nodes[i].ip, nodes[i].port, err);
         }
+
+        tox_add_tcp_relay(m, nodes[i].ip, nodes[i].port, (uint8_t *) key, &err);
+
+        if (err != TOX_ERR_BOOTSTRAP_OK) {
+            fprintf(stderr, "Failed to add TCP relay: %s %d (error %d)\n", nodes[i].ip, nodes[i].port, err);
+        }
+
+        free(key);
     }
 }
 
@@ -513,6 +670,8 @@ int main(int argc, char **argv)
     signal(SIGINT, catch_SIGINT);
     umask(S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
 
+    parse_args(argc, argv);
+
     Tox *m = init_tox();
 
     if (m == NULL) {
@@ -521,13 +680,19 @@ int main(int argc, char **argv)
 
     init_toxbot_state();
     print_profile_info(m);
-    bootstrap_DHT(m);
 
     uint64_t last_friend_purge = 0;
     uint64_t last_group_purge = 0;
+    uint64_t last_bootstrap = 0;
 
     while (!FLAG_EXIT) {
         uint64_t cur_time = (uint64_t) time(NULL);
+
+        if (tox_self_get_connection_status(m) == TOX_CONNECTION_NONE && timed_out(last_bootstrap, cur_time, BOOTSTRAP_INTERVAL)) {
+            printf("Bootstrapping to network...\n");
+            bootstrap_DHT(m);
+            last_bootstrap = cur_time;
+        }
 
         if (timed_out(last_friend_purge, cur_time, FRIEND_PURGE_INTERVAL)) {
             purge_inactive_friends(m);
