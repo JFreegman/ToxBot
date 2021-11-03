@@ -8,7 +8,9 @@
 *.app
 *.swp
 *.orig
+*.*vim*
 toxbot
 masterkeys
+blockedkeys
 toxbot_save
 COPYING

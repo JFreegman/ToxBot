@@ -1,5 +1,5 @@
 LIBS = toxcore
-CFLAGS += -std=gnu99 -Wall -ggdb -D_XOPEN_SOURCE_EXTENDED -D_XOPEN_SOURCE -D_FILE_OFFSET_BITS=64
+CFLAGS += -std=c11 -Wall -g -D_XOPEN_SOURCE_EXTENDED -D_XOPEN_SOURCE -D_FILE_OFFSET_BITS=64
 OBJ = toxbot.o misc.o commands.o groupchats.o
 CFLAGS += $(shell pkg-config --cflags $(LIBS))
 LDFLAGS += $(shell pkg-config --libs $(LIBS))
@@ -17,7 +17,7 @@ all: $(OBJ)
 install: toxbot
 	@install toxbot $(DESTDIR)$(PREFIX)/bin
 
-clean: 
+clean:
 	rm -f *.d *.o toxbot
 
 .PHONY: clean all
