@@ -47,9 +47,7 @@ char *hex_string_to_bin(const char *hex_string)
         exit(EXIT_FAILURE);
     }
 
-    size_t i;
-
-    for (i = 0; i < len; ++i, hex_string += 2) {
+    for (size_t i = 0; i < len; ++i, hex_string += 2) {
         sscanf(hex_string, "%2hhx", &val[i]);
     }
 

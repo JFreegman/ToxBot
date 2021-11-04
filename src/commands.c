@@ -253,9 +253,8 @@ static void cmd_id(Tox *m, uint32_t friendnum, int argc, char (*argv)[MAX_COMMAN
     char outmsg[TOX_ADDRESS_SIZE * 2 + 1];
     char address[TOX_ADDRESS_SIZE];
     tox_self_get_address(m, (uint8_t *) address);
-    int i;
 
-    for (i = 0; i < TOX_ADDRESS_SIZE; ++i) {
+    for (size_t i = 0; i < TOX_ADDRESS_SIZE; ++i) {
         char d[3];
         sprintf(d, "%02X", address[i] & 0xff);
         memcpy(outmsg + i * 2, d, 2);
@@ -296,9 +295,7 @@ static void cmd_info(Tox *m, uint32_t friendnum, int argc, char (*argv)[MAX_COMM
 
     tox_conference_get_chatlist(m, groupchat_list);
 
-    uint32_t i;
-
-    for (i = 0; i < num_chats; ++i) {
+    for (size_t i = 0; i < num_chats; ++i) {
         TOX_ERR_CONFERENCE_PEER_QUERY err;
         uint32_t groupnum = groupchat_list[i];
         uint32_t num_peers = tox_conference_peer_count(m, groupnum, &err);
@@ -802,9 +799,7 @@ static struct {
 
 static int do_command(Tox *m, uint32_t friendnum, int num_args, char (*args)[MAX_COMMAND_LENGTH])
 {
-    int i;
-
-    for (i = 0; commands[i].name; ++i) {
+    for (size_t i = 0; commands[i].name; ++i) {
         if (strcmp(args[0], commands[i].name) == 0) {
             (commands[i].func)(m, friendnum, num_args - 1, args);
             return 0;

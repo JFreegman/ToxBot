@@ -52,9 +52,7 @@ int group_add(uint32_t groupnum, uint8_t type, const char *password)
     realloc_groupchats(Tox_Bot.chats_idx + 1);
     memset(&Tox_Bot.g_chats[Tox_Bot.chats_idx], 0, sizeof(struct Group_Chat));
 
-    int i;
-
-    for (i = 0; i <= Tox_Bot.chats_idx && i < MAX_NUM_GROUPS; ++i) {
+    for (int i = 0; i <= Tox_Bot.chats_idx && i < MAX_NUM_GROUPS; ++i) {
         if (Tox_Bot.g_chats[i].active) {
             continue;
         }
@@ -102,9 +100,7 @@ void group_leave(uint32_t groupnum)
 
 int group_index(uint32_t groupnum)
 {
-    int i;
-
-    for (i = 0; i < Tox_Bot.chats_idx; ++i) {
+    for (int i = 0; i < Tox_Bot.chats_idx; ++i) {
         if (Tox_Bot.g_chats[i].active && Tox_Bot.g_chats[i].groupnum == groupnum) {
             return i;
         }

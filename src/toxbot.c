@@ -51,7 +51,8 @@
 
 #define MAX_PORT_RANGE 65535
 
-bool FLAG_EXIT = false;    /* set on SIGINT */
+volatile sig_atomic_t FLAG_EXIT = false;    /* set on SIGINT */
+
 char *DATA_FILE        = "toxbot_save";
 char *MASTERLIST_FILE  = "masterkeys";
 char *BLOCKLIST_FILE   = "blockedkeys";
@@ -91,9 +92,7 @@ static void exit_groupchats(Tox *m, size_t numchats)
     uint32_t chatlist[numchats];
     tox_conference_get_chatlist(m, chatlist);
 
-    size_t i;
-
-    for (i = 0; i < numchats; ++i) {
+    for (size_t i = 0; i < numchats; ++i) {
         tox_conference_delete(m, chatlist[i], NULL);
     }
 }
@@ -403,12 +402,6 @@ static void parse_args(int argc, char *argv[])
                 break;
             }
 
-            case 'h': {
-                print_usage();
-                exit(EXIT_SUCCESS);
-                break;
-            }
-
             case 'L': {
                 Options.disable_lan = true;
                 printf("Option set: LAN disabled\n");
@@ -439,7 +432,7 @@ static void parse_args(int argc, char *argv[])
                     exit(EXIT_FAILURE);
                 }
 
-                int port = strtol(argv[optind - 1], NULL, 10);
+                long int port = strtol(argv[optind - 1], NULL, 10);
 
                 if (port <= 0 || port > MAX_PORT_RANGE) {
                     fprintf(stderr, "Invalid port given for proxy\n");
@@ -450,7 +443,7 @@ static void parse_args(int argc, char *argv[])
 
                 const char *proxy_str = Options.proxy_type == TOX_PROXY_TYPE_SOCKS5 ? "SOCKS5" : "HTTP";
 
-                printf("Option set: %s proxy %s:%d\n", proxy_str, optarg, port);
+                printf("Option set: %s proxy %s:%ld\n", proxy_str, optarg, port);
             }
 
             // Intentional fallthrough
@@ -462,6 +455,10 @@ static void parse_args(int argc, char *argv[])
                 printf("Option set: UDP/DHT disabled\n");
                 break;
             }
+
+            case 'h':
+
+            // Intentional fallthrough
 
             default: {
                 print_usage();
@@ -587,9 +584,8 @@ static void print_profile_info(Tox *m)
 
     char address[TOX_ADDRESS_SIZE];
     tox_self_get_address(m, (uint8_t *) address);
-    int i;
 
-    for (i = 0; i < TOX_ADDRESS_SIZE; ++i) {
+    for (int i = 0; i < TOX_ADDRESS_SIZE; ++i) {
         char d[3];
         snprintf(d, sizeof(d), "%02X", address[i] & 0xff);
         printf("%s", d);
@@ -619,9 +615,7 @@ static void purge_inactive_friends(Tox *m)
     uint32_t friend_list[numfriends];
     tox_self_get_friend_list(m, friend_list);
 
-    size_t i;
-
-    for (i = 0; i < numfriends; ++i) {
+    for (size_t i = 0; i < numfriends; ++i) {
         uint32_t friendnum = friend_list[i];
 
         if (!tox_friend_exists(m, friendnum)) {
@@ -643,9 +637,7 @@ static void purge_inactive_friends(Tox *m)
 
 static void purge_empty_groups(Tox *m)
 {
-    uint32_t i;
-
-    for (i = 0; i < Tox_Bot.chats_idx; ++i) {
+    for (uint32_t i = 0; i < Tox_Bot.chats_idx; ++i) {
         if (!Tox_Bot.g_chats[i].active) {
             continue;
         }
@@ -688,7 +680,8 @@ int main(int argc, char **argv)
     while (!FLAG_EXIT) {
         uint64_t cur_time = (uint64_t) time(NULL);
 
-        if (tox_self_get_connection_status(m) == TOX_CONNECTION_NONE && timed_out(last_bootstrap, cur_time, BOOTSTRAP_INTERVAL)) {
+        if (tox_self_get_connection_status(m) == TOX_CONNECTION_NONE
+                && timed_out(last_bootstrap, cur_time, BOOTSTRAP_INTERVAL)) {
             printf("Bootstrapping to network...\n");
             bootstrap_DHT(m);
             last_bootstrap = cur_time;
