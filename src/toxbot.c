@@ -44,18 +44,17 @@
 #include "toxbot.h"
 #include "groupchats.h"
 
-#define VERSION "0.1.0"
+#define VERSION "0.1.1"
 #define FRIEND_PURGE_INTERVAL (60 * 60)
 #define GROUP_PURGE_INTERVAL (60 * 10)
 #define BOOTSTRAP_INTERVAL 20
 
 #define MAX_PORT_RANGE 65535
 
-volatile sig_atomic_t FLAG_EXIT = false;    /* set on SIGINT */
+/* Name of data file prior to version 0.1.1 */
+#define DATA_FILE_PRE_0_1_1 "toxbot_save"
 
-char *DATA_FILE        = "toxbot_save";
-char *MASTERLIST_FILE  = "masterkeys";
-char *BLOCKLIST_FILE   = "blockedkeys";
+volatile sig_atomic_t FLAG_EXIT = false;    /* set on SIGINT */
 
 struct Tox_Bot Tox_Bot;
 
@@ -328,6 +327,7 @@ static Tox *load_tox(struct Tox_Options *options, char *path)
     off_t data_len = file_size(path);
 
     if (data_len == 0) {
+        fprintf(stderr, "tox_new failed: toxbot save file is empty\n");
         fclose(fp);
         return NULL;
     }
@@ -657,10 +657,43 @@ static void purge_empty_groups(Tox *m)
     }
 }
 
+/* Attempts to rename legacy toxbot save file to new name
+ *
+ * Return 0 on successful rename, or if legacy file does not exist.
+ * Return -1 if both legacy file and new file exist. If this occurrs the user needs to manually sort
+ *   the situation out.
+ * Return -2 if file rename operation is unsuccessful.
+ */
+static int legacy_data_file_rename(void)
+{
+    if (!file_exists(DATA_FILE_PRE_0_1_1)) {
+        return 0;
+    }
+
+    if (file_exists(DATA_FILE)) {
+        return -1;
+    }
+
+    if (rename(DATA_FILE_PRE_0_1_1, DATA_FILE) != 0) {
+        return -2;
+    }
+
+    printf("Renaming legacy toxbot save file to '%s'\n", DATA_FILE);
+
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
     signal(SIGINT, catch_SIGINT);
     umask(S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+
+    int ret = legacy_data_file_rename() ;
+
+    if (ret != 0) {
+        fprintf(stderr, "Failed to rename legacy data file. Error: %d\n", ret);
+        exit(EXIT_FAILURE);
+    }
 
     parse_args(argc, argv);
 

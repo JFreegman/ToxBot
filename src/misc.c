@@ -65,6 +65,12 @@ off_t file_size(const char *path)
     return st.st_size;
 }
 
+bool file_exists(const char *path)
+{
+    struct stat s;
+    return stat(path, &s) == 0;
+}
+
 uint16_t copy_tox_str(char *msg, size_t size, const char *data, uint16_t length)
 {
     int len = MIN(length, size - 1);

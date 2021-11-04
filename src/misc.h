@@ -39,6 +39,9 @@ char *hex_string_to_bin(const char *hex_string);
 /* returns file size or 0 on error */
 off_t file_size(const char *path);
 
+/* Return true if a file exists at `path`. */
+bool file_exists(const char *path);
+
 /* copies data to msg buffer.
    returns length of msg, which will be no larger than size-1 */
 uint16_t copy_tox_str(char *msg, size_t size, const char *data, uint16_t length);

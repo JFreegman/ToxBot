@@ -29,6 +29,10 @@
 
 #define MAX_NUM_GROUPS 256
 
+#define DATA_FILE        "toxbot.tox"
+#define MASTERLIST_FILE  "masterkeys"
+#define BLOCKLIST_FILE   "blockedkeys"
+
 struct Tox_Bot {
     uint64_t start_time;
     uint64_t inactive_limit;

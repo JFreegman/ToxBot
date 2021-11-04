@@ -39,8 +39,6 @@
 #define MAX_COMMAND_LENGTH TOX_MAX_MESSAGE_LENGTH
 #define MAX_NUM_ARGS 4
 
-extern char *DATA_FILE;
-extern char *MASTERLIST_FILE;
 extern struct Tox_Bot Tox_Bot;
 
 static void authent_failed(Tox *m, uint32_t friendnum)
