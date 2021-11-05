@@ -1,7 +1,7 @@
 /*  toxbot.c
  *
  *
- *  Copyright (C) 2014 toxbot All Rights Reserved.
+ *  Copyright (C) 2021 toxbot All Rights Reserved.
  *
  *  This file is part of toxbot.
  *
@@ -43,6 +43,7 @@
 #include "commands.h"
 #include "toxbot.h"
 #include "groupchats.h"
+#include "log.h"
 
 #define VERSION "0.1.1"
 #define FRIEND_PURGE_INTERVAL (60 * 60)
@@ -132,15 +133,15 @@ static void cb_self_connection_change(Tox *m, TOX_CONNECTION connection_status, 
 {
     switch (connection_status) {
         case TOX_CONNECTION_NONE:
-            fprintf(stderr, "Connection lost\n");
+            log_timestamp("Connection lost");
             break;
 
         case TOX_CONNECTION_TCP:
-            fprintf(stderr, "Connection established (TCP)\n");
+            log_timestamp("Connection established (TCP)");
             break;
 
         case TOX_CONNECTION_UDP:
-            fprintf(stderr, "Connection established (UDP)\n");
+            log_timestamp("Connection established (UDP)");
             break;
     }
 }
@@ -176,7 +177,9 @@ static void cb_friend_request(Tox *m, const uint8_t *public_key, const uint8_t *
     tox_friend_add_norequest(m, public_key, &err);
 
     if (err != TOX_ERR_FRIEND_ADD_OK) {
-        fprintf(stderr, "tox_friend_add_norequest failed (error %d)\n", err);
+        log_error_timestamp(err, "tox_friend_add_norequest failed");
+    } else {
+        log_timestamp("Accepted friend request");
     }
 
     save_data(m, DATA_FILE);
@@ -241,16 +244,16 @@ static void cb_group_invite(Tox *m, uint32_t friendnumber, TOX_CONFERENCE_TYPE t
     }
 
     if (group_add(groupnum, type, NULL) == -1) {
-        fprintf(stderr, "Invite from %s failed (group_add failed)\n", name);
+        log_error_timestamp(-1, "Invite from %s failed (group_add failed)", name);
         tox_conference_delete(m, groupnum, NULL);
         return;
     }
 
-    printf("Accepted groupchat invite from %s [%d]\n", name, groupnum);
+    log_timestamp("Accepted groupchat invite from %s [%d]", name, groupnum);
     return;
 
 on_error:
-    fprintf(stderr, "Invite from %s failed (core failure)\n", name);
+    log_error_timestamp(-1, "Invite from %s failed (core failure)", name);
 }
 
 static void cb_group_titlechange(Tox *m, uint32_t groupnumber, uint32_t peernumber, const uint8_t *title,
@@ -302,7 +305,7 @@ int save_data(Tox *m, const char *path)
     return 0;
 
 on_error:
-    fprintf(stderr, "Warning: save_data failed\n");
+    log_error_timestamp(-1, "Warning: save_data failed");
     return -1;
 }
 
@@ -357,13 +360,13 @@ static Tox *load_tox(struct Tox_Options *options, char *path)
 
 static void print_usage(void)
 {
-    fprintf(stderr, "usage: toxbot [OPTION] ...\n");
-    fprintf(stderr, "    -4, --ipv4              Force IPv4\n");
-    fprintf(stderr, "    -h, --help              Show this message and exit\n");
-    fprintf(stderr, "    -L, --no-lan            Disable LAN\n");
-    fprintf(stderr, "    -P, --HTTP-proxy        Use HTTP proxy. Requires: [IP] [port]\n");
-    fprintf(stderr, "    -p, --SOCKS5-proxy      Use SOCKS proxy. Requires: [IP] [port]\n");
-    fprintf(stderr, "    -t, --force-tcp         Force connections through TCP relays (DHT disabled)\n");
+    printf("usage: toxbot [OPTION] ...\n");
+    printf("    -4, --ipv4              Force IPv4\n");
+    printf("    -h, --help              Show this message and exit\n");
+    printf("    -L, --no-lan            Disable LAN\n");
+    printf("    -P, --HTTP-proxy        Use HTTP proxy. Requires: [IP] [port]\n");
+    printf("    -p, --SOCKS5-proxy      Use SOCKS proxy. Requires: [IP] [port]\n");
+    printf("    -t, --force-tcp         Force connections through TCP relays (DHT disabled)\n");
 }
 
 static void set_default_options(void)
@@ -580,7 +583,7 @@ static void print_profile_info(Tox *m)
 {
     printf("ToxBot version %s\n", VERSION);
     printf("Toxcore version %d.%d.%d\n", tox_version_major(), tox_version_minor(), tox_version_patch());
-    printf("ID: ");
+    printf("Tox ID: ");
 
     char address[TOX_ADDRESS_SIZE];
     tox_self_get_address(m, (uint8_t *) address);
@@ -600,7 +603,7 @@ static void print_profile_info(Tox *m)
 
     size_t numfriends = tox_self_get_friend_list_size(m);
     printf("Name: %s\n", name);
-    printf("Contacts: %d\n", (int) numfriends);
+    printf("Contacts: %lu\n", numfriends);
     printf("Inactive contacts purged after %"PRIu64" days\n", Tox_Bot.inactive_limit / SECONDS_IN_DAY);
 }
 
@@ -646,7 +649,7 @@ static void purge_empty_groups(Tox *m)
         uint32_t num_peers = tox_conference_peer_count(m, Tox_Bot.g_chats[i].groupnum, &err);
 
         if (err != TOX_ERR_CONFERENCE_PEER_QUERY_OK || num_peers <= 1) {
-            fprintf(stderr, "Deleting empty group %i\n", Tox_Bot.g_chats[i].groupnum);
+            log_timestamp("Deleting empty group %d", Tox_Bot.g_chats[i].groupnum);
             tox_conference_delete(m, Tox_Bot.g_chats[i].groupnum, NULL);
             group_leave(i);
 
@@ -715,7 +718,7 @@ int main(int argc, char **argv)
 
         if (tox_self_get_connection_status(m) == TOX_CONNECTION_NONE
                 && timed_out(last_bootstrap, cur_time, BOOTSTRAP_INTERVAL)) {
-            printf("Bootstrapping to network...\n");
+            log_timestamp("Bootstrapping to network...");
             bootstrap_DHT(m);
             last_bootstrap = cur_time;
         }

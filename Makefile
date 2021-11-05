@@ -4,7 +4,7 @@ BINDIR = $(PREFIX)/bin
 
 LIBS = toxcore
 CFLAGS += -std=c11 -Wall -g -D_XOPEN_SOURCE_EXTENDED -D_XOPEN_SOURCE -D_FILE_OFFSET_BITS=64
-OBJ = toxbot.o misc.o commands.o groupchats.o
+OBJ = toxbot.o misc.o commands.o groupchats.o log.o
 CFLAGS += $(shell pkg-config --cflags $(LIBS))
 LDFLAGS += $(shell pkg-config --libs $(LIBS))
 SRC_DIR = ./src

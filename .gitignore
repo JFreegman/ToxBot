@@ -12,5 +12,6 @@
 toxbot
 masterkeys
 blockedkeys
-toxbot_save
 COPYING
+*.tox
+toxbot_save

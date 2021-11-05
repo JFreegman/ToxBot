@@ -1,7 +1,7 @@
 /*  groupchats.h
  *
  *
- *  Copyright (C) 2014 toxbot All Rights Reserved.
+ *  Copyright (C) 2021 toxbot All Rights Reserved.
  *
  *  This file is part of toxbot.
  *

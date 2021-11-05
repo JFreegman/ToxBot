@@ -1,4 +1,4 @@
-/*  toxbot.h
+/*  log.h
  *
  *
  *  Copyright (C) 2021 toxbot All Rights Reserved.
@@ -20,31 +20,13 @@
  *
  */
 
-#ifndef TOXBOT_H
-#define TOXBOT_H
+#ifndef LOG_H
+#define LOG_H
 
-#include <stdint.h>
-#include <tox/tox.h>
-#include "groupchats.h"
+/* Print `message` to stdout prefixed with a timestamp */
+void log_timestamp(const char *message, ...);
 
-#define MAX_NUM_GROUPS 256
+/* Print `message` with `err` to stderr prefixed with a timestamp */
+void log_error_timestamp(int err, const char *message, ...);
 
-#define DATA_FILE        "toxbot.tox"
-#define MASTERLIST_FILE  "masterkeys"
-#define BLOCKLIST_FILE   "blockedkeys"
-
-struct Tox_Bot {
-    uint64_t start_time;
-    uint64_t inactive_limit;
-    int default_groupnum;
-    bool title_lock;
-    int num_online_friends;
-    struct Group_Chat *g_chats;
-    int chats_idx;
-};
-
-int load_Masters(const char *path);
-int save_data(Tox *m, const char *path);
-bool friend_is_master(Tox *m, uint32_t friendnumber);
-
-#endif /* TOXBOT_H */
+#endif // LOG_H
