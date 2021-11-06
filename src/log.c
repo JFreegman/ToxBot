@@ -21,16 +21,17 @@
  */
 
 #include <stdio.h>
-#include <time.h>
 #include <stdarg.h>
+
+#include "misc.h"
 
 #define TIMESTAMP_SIZE 64
 #define MAX_MESSAGE_SIZE 512
 
-static struct tm *get_time(void)
+static struct tm *get_wall_time(void)
 {
     struct tm *timeinfo;
-    time_t t = time(NULL);
+    time_t t = get_time();
     timeinfo = localtime((const time_t *) &t);
     return timeinfo;
 }
@@ -45,7 +46,7 @@ void log_timestamp(const char *message, ...)
     va_end(args);
 
     char ts[TIMESTAMP_SIZE];
-    strftime(ts, TIMESTAMP_SIZE,"[%H:%M:%S]", get_time());
+    strftime(ts, TIMESTAMP_SIZE,"[%H:%M:%S]", get_wall_time());
 
     printf("%s %s\n", ts, format);
 }
@@ -60,7 +61,7 @@ void log_error_timestamp(int err, const char *message, ...)
     va_end(args);
 
     char ts[TIMESTAMP_SIZE];
-    strftime(ts, TIMESTAMP_SIZE,"[%H:%M:%S]", get_time());
+    strftime(ts, TIMESTAMP_SIZE,"[%H:%M:%S]", get_wall_time());
 
     fprintf(stderr, "%s %s (error %d)\n", ts, format, err);
 }

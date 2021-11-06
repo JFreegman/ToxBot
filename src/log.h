@@ -30,3 +30,4 @@ void log_timestamp(const char *message, ...);
 void log_error_timestamp(int err, const char *message, ...);
 
 #endif // LOG_H
+

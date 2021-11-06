@@ -42,3 +42,4 @@ int group_index(uint32_t groupnum);
 void realloc_groupchats(int n);
 
 #endif  /* GROUPCHATS_H */
+

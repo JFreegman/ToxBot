@@ -24,15 +24,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <stdbool.h>
-#include <stdint.h>
 #include <unistd.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <time.h>
 #include <limits.h>
 #include <signal.h>
-#include <inttypes.h>
 #include <getopt.h>
 #include <stdarg.h>
 
@@ -45,7 +40,7 @@
 #include "groupchats.h"
 #include "log.h"
 
-#define VERSION "0.1.1"
+#define VERSION "0.1.2"
 #define FRIEND_PURGE_INTERVAL (60 * 60)
 #define GROUP_PURGE_INTERVAL (60 * 10)
 #define BOOTSTRAP_INTERVAL 20
@@ -70,7 +65,7 @@ static struct Options {
 
 static void init_toxbot_state(void)
 {
-    Tox_Bot.start_time = (uint64_t) time(NULL);
+    Tox_Bot.start_time = get_time();
     Tox_Bot.default_groupnum = 0;
     Tox_Bot.chats_idx = 0;
     Tox_Bot.num_online_friends = 0;
@@ -84,27 +79,8 @@ static void catch_SIGINT(int sig)
     FLAG_EXIT = true;
 }
 
-static void exit_groupchats(Tox *m, size_t numchats)
-{
-    memset(Tox_Bot.g_chats, 0, Tox_Bot.chats_idx * sizeof(struct Group_Chat));
-    realloc_groupchats(0);
-
-    uint32_t chatlist[numchats];
-    tox_conference_get_chatlist(m, chatlist);
-
-    for (size_t i = 0; i < numchats; ++i) {
-        tox_conference_delete(m, chatlist[i], NULL);
-    }
-}
-
 static void exit_toxbot(Tox *m)
 {
-    size_t numchats = tox_conference_get_chatlist_size(m);
-
-    if (numchats) {
-        exit_groupchats(m, numchats);
-    }
-
     save_data(m, DATA_FILE);
     tox_kill(m);
     exit(EXIT_SUCCESS);
@@ -358,6 +334,44 @@ static Tox *load_tox(struct Tox_Options *options, char *path)
     return m;
 }
 
+static void load_conferences(Tox *m)
+{
+    size_t num_chats = tox_conference_get_chatlist_size(m);
+
+    if (num_chats == 0) {
+        return;
+    }
+
+    uint32_t *chatlist = malloc(num_chats * sizeof(uint32_t));
+
+    if (chatlist == NULL) {
+        fprintf(stderr, "malloc() failed in load_conferences()\n");
+        return;
+    }
+
+    tox_conference_get_chatlist(m, chatlist);
+
+    for (size_t i = 0; i < num_chats; ++i) {
+        uint32_t groupnumber = chatlist[i];
+
+        Tox_Err_Conference_Get_Type type_err;
+        Tox_Conference_Type type = tox_conference_get_type(m, groupnumber, &type_err);
+
+        if (type_err != TOX_ERR_CONFERENCE_GET_TYPE_OK) {
+            tox_conference_delete(m, groupnumber, NULL);
+            continue;
+        }
+
+        if (group_add(groupnumber, type, NULL) != 0) {
+            fprintf(stderr, "Failed to autoload group %d\n", groupnumber);
+            tox_conference_delete(m, groupnumber, NULL);
+            continue;
+        }
+    }
+
+    free(chatlist);
+}
+
 static void print_usage(void)
 {
     printf("usage: toxbot [OPTION] ...\n");
@@ -602,9 +616,11 @@ static void print_profile_info(Tox *m)
     name[len] = '\0';
 
     size_t numfriends = tox_self_get_friend_list_size(m);
+    size_t num_chats = tox_conference_get_chatlist_size(m);
+
     printf("Name: %s\n", name);
     printf("Contacts: %lu\n", numfriends);
-    printf("Inactive contacts purged after %"PRIu64" days\n", Tox_Bot.inactive_limit / SECONDS_IN_DAY);
+    printf("Active groups: %lu\n", num_chats);
 }
 
 static void purge_inactive_friends(Tox *m)
@@ -632,7 +648,7 @@ static void purge_inactive_friends(Tox *m)
             continue;
         }
 
-        if (((uint64_t) time(NULL)) - last_online > Tox_Bot.inactive_limit) {
+        if (get_time() - last_online > Tox_Bot.inactive_limit) {
             tox_friend_delete(m, friendnum, NULL);
         }
     }
@@ -707,14 +723,16 @@ int main(int argc, char **argv)
     }
 
     init_toxbot_state();
+    load_conferences(m);
     print_profile_info(m);
 
-    uint64_t last_friend_purge = 0;
-    uint64_t last_group_purge = 0;
+    time_t cur_time = get_time();
+
+    uint64_t last_friend_purge = cur_time;
+    uint64_t last_group_purge = cur_time;
     uint64_t last_bootstrap = 0;
 
     while (!FLAG_EXIT) {
-        uint64_t cur_time = (uint64_t) time(NULL);
 
         if (tox_self_get_connection_status(m) == TOX_CONNECTION_NONE
                 && timed_out(last_bootstrap, cur_time, BOOTSTRAP_INTERVAL)) {
@@ -735,10 +753,14 @@ int main(int argc, char **argv)
         }
 
         tox_iterate(m, NULL);
-        usleep(tox_iteration_interval(m) * 1000);;
+
+        usleep(tox_iteration_interval(m) * 1000);
+
+        cur_time = get_time();
     }
 
     exit_toxbot(m);
 
     return 0;
 }
+

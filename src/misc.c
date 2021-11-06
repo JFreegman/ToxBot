@@ -20,22 +20,25 @@
  *
  */
 
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdbool.h>
 #include <unistd.h>
 
 #include <tox/tox.h>
 
 #include "misc.h"
 
-bool timed_out(uint64_t timestamp, uint64_t curtime, uint64_t timeout)
+bool timed_out(time_t timestamp, time_t curtime, uint64_t timeout)
 {
     return timestamp + timeout <= curtime;
+}
+
+time_t get_time(void)
+{
+    return time(NULL);
 }
 
 char *hex_string_to_bin(const char *hex_string)
@@ -159,3 +162,4 @@ int file_contains_key(const char *public_key, const char *path)
     fclose(fp);
     return 0;
 }
+

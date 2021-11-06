@@ -34,7 +34,7 @@
 #define BLOCKLIST_FILE   "blockedkeys"
 
 struct Tox_Bot {
-    uint64_t start_time;
+    time_t start_time;
     uint64_t inactive_limit;
     int default_groupnum;
     bool title_lock;
@@ -48,3 +48,4 @@ int save_data(Tox *m, const char *path);
 bool friend_is_master(Tox *m, uint32_t friendnumber);
 
 #endif /* TOXBOT_H */
+

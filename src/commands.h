@@ -26,3 +26,4 @@
 int execute(Tox *m, int friendnumber, const char *input, int length);
 
 #endif    /* COMMANDS_H */
+

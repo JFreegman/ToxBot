@@ -22,12 +22,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 #include <strings.h>
-#include <stdbool.h>
-#include <time.h>
-#include <inttypes.h>
 
 #include <tox/tox.h>
 #include <tox/toxav.h>
@@ -268,7 +264,7 @@ static void cmd_info(Tox *m, uint32_t friendnum, int argc, char (*argv)[MAX_COMM
     char outmsg[MAX_COMMAND_LENGTH];
     char timestr[64];
 
-    uint64_t curtime = (uint64_t) time(NULL);
+    time_t curtime = get_time();
     get_elapsed_time_str(timestr, sizeof(timestr), curtime - Tox_Bot.start_time);
     snprintf(outmsg, sizeof(outmsg), "Uptime: %s", timestr);
     tox_friend_send_message(m, friendnum, TOX_MESSAGE_TYPE_NORMAL, (uint8_t *) outmsg, strlen(outmsg), NULL);
@@ -823,3 +819,4 @@ int execute(Tox *m, uint32_t friendnum, const char *input, int length)
 
     return do_command(m, friendnum, num_args, args);
 }
+

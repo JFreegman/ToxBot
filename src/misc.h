@@ -31,7 +31,15 @@
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #endif
 
-bool timed_out(uint64_t timestamp, uint64_t curtime, uint64_t timeout);
+#include <inttypes.h>
+#include <sys/types.h>
+#include <stdbool.h>
+#include <time.h>
+
+bool timed_out(time_t timestamp, time_t curtime, uint64_t timeout);
+
+/* Returns current unix timestamp */
+time_t get_time(void);
 
 /* converts hexidecimal string to binary */
 char *hex_string_to_bin(const char *hex_string);
@@ -65,3 +73,4 @@ void get_elapsed_time_str(char *buf, int bufsize, uint64_t secs);
 int file_contains_key(const char *public_key, const char *path);
 
 #endif /* MISC_H */
+

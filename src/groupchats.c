@@ -22,7 +22,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <string.h>
 
 #include "toxbot.h"
@@ -108,3 +107,4 @@ int group_index(uint32_t groupnum)
 
     return -1;
 }
+
