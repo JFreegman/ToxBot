@@ -4,9 +4,9 @@ ToxBot is a remotely controlled [Tox](https://tox.chat) bot whose purpose is to 
 Although current functionality is barebones, it will be easy to expand the bot to act in more comprehensive ways once Tox group chats are fully implemented (e.g. admin duties); this was the main motivation behind creating a proper Tox bot.
 
 ## Controlling
-In order to control the bot you must add your Tox ID to the masterkeys file. Once you add the bot as a friend, you can send it [privileged commands](https://github.com/JFreegman/ToxBot/blob/master/commands.txt) as normal messages; there is no front-end.
+In order to control the bot you must add your Tox ID to the `masterkeys` file in your base directory. Once you add the bot as a friend, you can send it [privileged commands](https://github.com/JFreegman/ToxBot/blob/master/commands.txt) as normal messages; there is no front-end.
 
-Note: ToxBot will automatically accept a groupchat invite from a master.
+ToxBot will automatically accept groupchat invites from a master.
 
 ### Non-privileged commands
 * `help` - Print this message
@@ -17,11 +17,11 @@ Note: ToxBot will automatically accept a groupchat invite from a master.
 * `group <type> <pass>` - Creates a new groupchat with type: text | audio (optional password)
 
 ## Dependencies
-pkg-config
-[libtoxcore](https://github.com/toktok/c-toxcore)
-libtoxav
+* pkg-config
+* [libtoxcore](https://github.com/toktok/c-toxcore)
+* libtoxav
 
 ## Compiling
-Run `make`
+`make && make install`
 
 Note: If you get an error that says `cannot open shared object file: No such file or directory`, try running `sudo ldconfig`.

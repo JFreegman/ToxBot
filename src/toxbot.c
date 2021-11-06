@@ -110,6 +110,7 @@ static void cb_self_connection_change(Tox *m, TOX_CONNECTION connection_status, 
     switch (connection_status) {
         case TOX_CONNECTION_NONE:
             log_timestamp("Connection lost");
+            Tox_Bot.last_bootstrap = get_time(); // usually we don't need to manually bootstrap if connection lost
             break;
 
         case TOX_CONNECTION_TCP:
@@ -537,7 +538,7 @@ static Tox *init_tox(void)
     size_t n_len = tox_self_get_name_size(m);
 
     if (n_len == 0) {
-        tox_self_set_name(m, (uint8_t *) "ToxBot", strlen("ToxBot"), NULL);
+        tox_self_set_name(m, (uint8_t *) "Tox_Bot", strlen("Tox_Bot"), NULL);
     }
 
     return m;
@@ -595,7 +596,7 @@ static void bootstrap_DHT(Tox *m)
 
 static void print_profile_info(Tox *m)
 {
-    printf("ToxBot version %s\n", VERSION);
+    printf("Tox_Bot version %s\n", VERSION);
     printf("Toxcore version %d.%d.%d\n", tox_version_major(), tox_version_minor(), tox_version_patch());
     printf("Tox ID: ");
 
@@ -730,15 +731,14 @@ int main(int argc, char **argv)
 
     uint64_t last_friend_purge = cur_time;
     uint64_t last_group_purge = cur_time;
-    uint64_t last_bootstrap = 0;
 
     while (!FLAG_EXIT) {
 
         if (tox_self_get_connection_status(m) == TOX_CONNECTION_NONE
-                && timed_out(last_bootstrap, cur_time, BOOTSTRAP_INTERVAL)) {
+                && timed_out(Tox_Bot.last_bootstrap, cur_time, BOOTSTRAP_INTERVAL)) {
             log_timestamp("Bootstrapping to network...");
             bootstrap_DHT(m);
-            last_bootstrap = cur_time;
+            Tox_Bot.last_bootstrap = cur_time;
         }
 
         if (timed_out(last_friend_purge, cur_time, FRIEND_PURGE_INTERVAL)) {

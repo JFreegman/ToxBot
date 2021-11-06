@@ -34,13 +34,14 @@
 #define BLOCKLIST_FILE   "blockedkeys"
 
 struct Tox_Bot {
-    time_t start_time;
-    uint64_t inactive_limit;
-    int default_groupnum;
-    bool title_lock;
-    int num_online_friends;
+    time_t     start_time;  // time toxbot was started
+    time_t     last_bootstrap;  // last time we tried to bootstrap
+    uint64_t   inactive_limit;  // how often we purge inactive contacts
+    int        default_groupnum;  // the group that invite commands with no ID default to
+    int        num_online_friends;
+    int        chats_idx;
+
     struct Group_Chat *g_chats;
-    int chats_idx;
 };
 
 int load_Masters(const char *path);
