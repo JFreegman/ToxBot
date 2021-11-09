@@ -41,8 +41,17 @@
 #include "log.h"
 
 #define VERSION "0.1.2"
+
+/* How often we attempt to purge inactive friends */
 #define FRIEND_PURGE_INTERVAL (60 * 60)
+
+/* How often we attempt to purge inactive groups */
 #define GROUP_PURGE_INTERVAL (60 * 10)
+
+/* How long we need to have had a stable connection before purging inactive groups */
+#define GROUP_PURGE_CONNECT_TIMEOUT (60 * 60)
+
+/* How often we attempt to bootstrap when not presently connected to the network */
 #define BOOTSTRAP_INTERVAL 20
 
 #define MAX_PORT_RANGE 65535
@@ -66,6 +75,7 @@ static struct Options {
 static void init_toxbot_state(void)
 {
     Tox_Bot.start_time = get_time();
+    Tox_Bot.last_connected = get_time();
     Tox_Bot.default_groupnum = 0;
     Tox_Bot.chats_idx = 0;
     Tox_Bot.num_online_friends = 0;
@@ -114,10 +124,12 @@ static void cb_self_connection_change(Tox *m, TOX_CONNECTION connection_status, 
             break;
 
         case TOX_CONNECTION_TCP:
+            Tox_Bot.last_connected = get_time();
             log_timestamp("Connection established (TCP)");
             break;
 
         case TOX_CONNECTION_UDP:
+            Tox_Bot.last_connected = get_time();
             log_timestamp("Connection established (UDP)");
             break;
     }
@@ -677,6 +689,28 @@ static void purge_empty_groups(Tox *m)
     }
 }
 
+/* Return true if we should attempt to purge empty groups.
+ *
+ * Empty groups are purged on an interval, but only if we have a stable connection
+ * to the Tox network.
+ */
+static bool check_group_purge(time_t last_group_purge, time_t cur_time, TOX_CONNECTION connection_status)
+{
+    if (!timed_out(last_group_purge, cur_time, GROUP_PURGE_INTERVAL)) {
+        return false;
+    }
+
+    if (connection_status == TOX_CONNECTION_NONE) {
+        return false;
+    }
+
+    if (!timed_out(Tox_Bot.last_connected, cur_time, GROUP_PURGE_CONNECT_TIMEOUT)) {
+        return false;
+    }
+
+    return true;
+}
+
 /* Attempts to rename legacy toxbot save file to new name
  *
  * Return 0 on successful rename, or if legacy file does not exist.
@@ -733,21 +767,22 @@ int main(int argc, char **argv)
     uint64_t last_group_purge = cur_time;
 
     while (!FLAG_EXIT) {
+        TOX_CONNECTION connection_status = tox_self_get_connection_status(m);
 
-        if (tox_self_get_connection_status(m) == TOX_CONNECTION_NONE
+        if (connection_status == TOX_CONNECTION_NONE
                 && timed_out(Tox_Bot.last_bootstrap, cur_time, BOOTSTRAP_INTERVAL)) {
             log_timestamp("Bootstrapping to network...");
             bootstrap_DHT(m);
             Tox_Bot.last_bootstrap = cur_time;
         }
 
-        if (timed_out(last_friend_purge, cur_time, FRIEND_PURGE_INTERVAL)) {
+        if (connection_status != TOX_CONNECTION_NONE && timed_out(last_friend_purge, cur_time, FRIEND_PURGE_INTERVAL)) {
             purge_inactive_friends(m);
             save_data(m, DATA_FILE);
             last_friend_purge = cur_time;
         }
 
-        if (timed_out(last_group_purge, cur_time, GROUP_PURGE_INTERVAL)) {
+        if (check_group_purge(last_group_purge, cur_time, connection_status)) {
             purge_empty_groups(m);
             last_group_purge = cur_time;
         }

@@ -35,6 +35,7 @@
 
 struct Tox_Bot {
     time_t     start_time;  // time toxbot was started
+    time_t     last_connected;  // time we last connected to the network
     time_t     last_bootstrap;  // last time we tried to bootstrap
     uint64_t   inactive_limit;  // how often we purge inactive contacts
     int        default_groupnum;  // the group that invite commands with no ID default to
